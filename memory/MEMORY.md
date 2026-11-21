@@ -16,3 +16,4 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-21: Repo demo creado: github.com/maavcrusoe/meme-demo (privado). Políticas, roles, heartbeat 30min, etiquetas en specs/decisiones/004.
 - 2026-11-21: Specs 00-08 (fases 0-7) escritas en specs/, pendientes de aprobación. Intake qwen con valoración; hub gana en etiquetas (decisiones/005).
 - 2026-11-21: Specs aprobadas por el owner. tasks/plan.md y tasks/todo.md creados con valores por defecto asumidos. Siguiente: commit y empezar Fase 0.
+- 2026-11-21: Fase 0 implementada en rama factory/fase-0: Postgres 16 solo en Docker, API uv+FastAPI, dashboard Next 16, login admin desde .env. Ver specs/decisiones/006.
