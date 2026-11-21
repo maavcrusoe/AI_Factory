@@ -5,6 +5,7 @@ se respeta. El marcador de origen es `TrackerLink.managed_labels`: lo último qu
 Así un cambio manual en el remoto se distingue de un cambio del hub y no se generan bucles.
 """
 
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from sqlalchemy import select
@@ -21,6 +22,7 @@ TAKEN_PREFIX = "taken by "
 HUB_MARKER = "<!-- factory:origin=hub -->"
 
 StartIntake = Callable[[int], None]
+logger = logging.getLogger("factory.tracker")
 
 
 def is_managed(label: str, factory_label: str) -> bool:
@@ -81,24 +83,38 @@ def reconcile_labels(db: Session, integration: ProjectIntegration, adapter: Trac
     ).all()
     changed = 0
     for link in links:
-        item = db.get(WorkItem, link.work_item_id)
-        desired = desired_managed(item, factory_label)
-        hub_changed = desired != link.managed_labels
-        remote = adapter.get_item(link.remote_id)
-        remote_managed = sorted(label for label in remote.labels if is_managed(label, factory_label))
-        if remote_managed == sorted(desired):
-            if hub_changed:
-                link.managed_labels = desired
-                link.synced_at = datetime.now(UTC)
-                db.commit()
-            continue
-        # Solo se tocan las gestionadas; el resto de etiquetas del remoto se conservan.
-        kept = [label for label in remote.labels if not is_managed(label, factory_label)]
-        adapter.set_labels(link.remote_id, [*kept, *desired])
-        kind = "labels_pushed" if hub_changed else "label_reverted"
-        record(db, item, kind, None, "hub-sync", {"remote": remote_managed, "hub": desired})
-        link.managed_labels = desired
-        link.synced_at = datetime.now(UTC)
-        db.commit()
-        changed += 1
+        # Un enlace roto (404, movido, sin permiso) no debe frenar al resto del proyecto.
+        try:
+            changed += _reconcile_link(db, adapter, link, factory_label)
+        except Exception as exc:  # noqa: BLE001
+            db.rollback()
+            logger.warning(
+                "sincronización de etiquetas fallida provider=%s link_id=%s error=%s",
+                integration.provider,
+                link.id,
+                type(exc).__name__,
+            )
     return changed
+
+
+def _reconcile_link(db: Session, adapter: TrackerAdapter, link: TrackerLink, factory_label: str) -> int:
+    item = db.get(WorkItem, link.work_item_id)
+    desired = desired_managed(item, factory_label)
+    hub_changed = desired != link.managed_labels
+    remote = adapter.get_item(link.remote_id)
+    remote_managed = sorted(label for label in remote.labels if is_managed(label, factory_label))
+    if remote_managed == sorted(desired):
+        if hub_changed:
+            link.managed_labels = desired
+            link.synced_at = datetime.now(UTC)
+            db.commit()
+        return 0
+    # Solo se tocan las gestionadas; el resto de etiquetas del remoto se conservan.
+    kept = [label for label in remote.labels if not is_managed(label, factory_label)]
+    adapter.set_labels(link.remote_id, [*kept, *desired])
+    kind = "labels_pushed" if hub_changed else "label_reverted"
+    record(db, item, kind, None, "hub-sync", {"remote": remote_managed, "hub": desired})
+    link.managed_labels = desired
+    link.synced_at = datetime.now(UTC)
+    db.commit()
+    return 1

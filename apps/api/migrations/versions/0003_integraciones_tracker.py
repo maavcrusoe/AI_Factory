@@ -1,6 +1,6 @@
-"""integraciones y enlaces de tracker
+"""Tablas project_integrations y tracker_links.
 
-Revision ID: 75a5790f6f7b
+Revision ID: 0003_integraciones_tracker
 Revises: 0002_work_items
 Create Date: 2026-11-21 18:54:41.317963
 """

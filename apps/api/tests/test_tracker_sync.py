@@ -121,6 +121,23 @@ def test_hub_wins_reverts_manual_remote_label_and_keeps_others(db, monkeypatch):
     assert reverted.actor == "hub-sync"
 
 
+def test_broken_link_does_not_stop_sync_of_other_links(db, monkeypatch, caplog):
+    fake = FakeGitHub()
+    fake.add_issue(1, "Roto", ["factory"])
+    fake.add_issue(2, "Sano", ["factory"])
+    _github(monkeypatch, fake)
+    integ = _integration(db, "github", {"repo": "maavcrusoe/meme-demo"})
+    poll_integration(db, integ, lambda _: None)
+    del fake.issues[1]  # el issue 1 existe al enlazar y luego desaparece del remoto
+    fake.issues[2]["labels"] = ["factory", "taken by bob"]  # cambio manual en el issue sano
+
+    with caplog.at_level(logging.WARNING):
+        assert reconcile_labels(db, integ, _adapter_for(integ, fake)) == 1
+
+    assert fake.issues[2]["labels"] == ["factory"]
+    assert "sincronización de etiquetas fallida provider=github" in caplog.text
+
+
 def test_manual_removal_of_factory_label_is_restored(db, monkeypatch):
     fake = FakeGitHub()
     fake.add_issue(1, "Meme", ["factory"])

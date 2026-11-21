@@ -45,6 +45,8 @@ class FakeGitHub:
             ]
             return httpx.Response(200, json=found)
         number = int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else None
+        if number is not None and number not in self.issues:
+            return httpx.Response(404, json={"message": "Not Found"})
         if request.method == "GET" and number is not None and len(parts) == 5:
             return httpx.Response(200, json=self._view(self.issues[number]))
         if request.method == "PUT" and parts[-1] == "labels":

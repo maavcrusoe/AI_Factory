@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.adapters import ADAPTERS
 from app.db import get_db
-from app.models import ProjectIntegration, User
+from app.models import ProjectIntegration, TrackerLink, User
 from app.routers.auth import current_user
 from app.services.crypto import TokenCryptoError, encrypt_token
 from app.services.rules import find_project
@@ -44,6 +44,16 @@ class IntegrationOut(BaseModel):
         )
 
 
+SCOPE_KEYS = {"github": ("repo",), "azuredevops": ("organization", "project", "repo"), "generic": ()}
+
+
+def _scope_changed(integration: ProjectIntegration, body: IntegrationIn) -> bool:
+    if integration.provider != body.provider:
+        return True
+    keys = SCOPE_KEYS[body.provider]
+    return any(integration.config.get(k) != body.config.get(k) for k in keys)
+
+
 def _validate_config(body: IntegrationIn) -> None:
     if "token" in body.config or "password" in body.config:
         raise HTTPException(status_code=422, detail="El token no va en config: usa el campo token")
@@ -69,6 +79,11 @@ def put_integration(
     project = find_project(db, slug)
     _validate_config(body)
     integration = db.scalar(select(ProjectIntegration).where(ProjectIntegration.project_id == project.id))
+    if integration is not None and _scope_changed(integration, body):
+        linked = db.scalar(select(TrackerLink.id).where(TrackerLink.project_id == project.id).limit(1))
+        if linked is not None:
+            # Con enlaces vivos, cambiar de repo/proyecto escribiría etiquetas en issues ajenos.
+            raise HTTPException(status_code=409, detail="Hay items enlazados: no se cambia el repo ni el proyecto")
     if integration is None:
         integration = ProjectIntegration(project_id=project.id, provider=body.provider)
         db.add(integration)

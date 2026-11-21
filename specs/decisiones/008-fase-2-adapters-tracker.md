@@ -16,7 +16,9 @@
 - **Fuera de este PR**: UI en el dashboard (no necesaria para esta fase), claim y `taken by` desde la API (Fase 3), `get_diff` y el resto de operaciones de repo en Azure DevOps.
 
 ## Verificación
-- `pytest`: 52 pasan, 1 se salta (Ollama real). `GITHUB_REAL=1 pytest -m github_real`: pasa.
+- `pytest`: 53 pasan, 2 se saltan (Ollama real y GitHub real). `GITHUB_REAL=1 pytest -m github_real`: pasa.
+- Enlace roto (404) no frena la sincronización de los demás enlaces del proyecto; se registra por tipo de error.
+- Cambiar `repo` (GitHub) o `organization`/`project`/`repo` (Azure DevOps) o de proveedor devuelve 409 mientras haya items enlazados.
 - Migración `0003`: upgrade, downgrade, upgrade y `alembic check` sin diferencias.
 - Sin Playwright: no hay cambios de UI.
 
@@ -24,3 +26,5 @@
 - Azure DevOps: probar con organización real, verificar versiones de API y decidir `get_diff`.
 - Claim y `taken by` desde la API (Fase 3).
 - Varios procesos de API: bloqueo del sondeo.
+- La etiqueta de fábrica siempre va en el remoto de los items enlazados, también en REJECTED. Spec 004 sugiere que la etiqueta significa "intake favorable"; por confirmar.
+- GitHub: una página de 100 issues por sondeo, sin paginación. Una lectura por enlace y ciclo: reducir cuando haya muchos items.

@@ -125,3 +125,34 @@ def test_saving_token_without_key_is_503_and_stores_nothing(monkeypatch):
     assert TOKEN not in resp.text
     with SessionLocal() as db:
         assert db.scalar(select(ProjectIntegration)) is None
+
+
+def test_repo_change_is_blocked_only_while_items_are_linked():
+    from app.models import TrackerLink, WorkItem, WorkItemEvent
+    from app.services.ingest import ingest
+
+    headers = _admin()
+    url = f"/api/v1/projects/{SLUG}/integration"
+    body_a = {"provider": "github", "config": {"repo": "maavcrusoe/meme-demo"}, "token": TOKEN}
+    body_b = {"provider": "github", "config": {"repo": "maavcrusoe/otro-repo"}, "token": TOKEN}
+    assert client.put(url, json=body_a, headers=headers).status_code == 200
+    assert client.put(url, json=body_b, headers=headers).status_code == 200  # sin enlaces: permitido
+
+    with SessionLocal() as db:
+        project = db.scalar(select(Project).where(Project.slug == SLUG))
+        item, _ = ingest(
+            db, project, source="github", title="t", body="b", payload={},
+            idempotency_key="github:777", actor="test",
+            link={"provider": "github", "remote_id": "777", "remote_url": None},
+        )
+        item_id = item.id
+    try:
+        blocked = client.put(url, json=body_a, headers=headers)
+        assert blocked.status_code == 409
+        assert client.put(url, json=body_b, headers=headers).status_code == 200  # mismo repo: permitido
+    finally:
+        with SessionLocal() as db:
+            db.execute(delete(TrackerLink).where(TrackerLink.work_item_id == item_id))
+            db.execute(delete(WorkItemEvent).where(WorkItemEvent.work_item_id == item_id))
+            db.execute(delete(WorkItem).where(WorkItem.id == item_id))
+            db.commit()
