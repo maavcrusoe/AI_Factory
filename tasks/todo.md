@@ -1,12 +1,12 @@
 # Tareas
 
 ## Fase 0: base del hub
-- [ ] Monorepo, `.gitignore`, `.env.example`. Verify: árbol creado.
-- [ ] API FastAPI + `/health` + test. Verify: `cd apps/api && pytest`.
-- [ ] Postgres (Docker) + Alembic + modelos `projects`, `users`. Verify: `alembic upgrade head`.
-- [ ] Dashboard Next.js con página de estado. Verify: Playwright screenshot.
-- [ ] Login local mínimo (admin por `.env`). Verify: test de login.
-- [ ] `npm run dev` en la raíz levanta api + dashboard. Verify: ambos responden.
+- [x] Monorepo, `.gitignore`, `.env.example`. Verify: árbol creado.
+- [x] API FastAPI + `/health` + test. Verify: `cd apps/api && pytest`.
+- [x] Postgres (Docker) + Alembic + modelos `projects`, `users`. Verify: `alembic upgrade head`.
+- [x] Dashboard Next.js con página de estado. Verify: Playwright screenshot.
+- [x] Login local mínimo (admin por `.env`). Verify: test de login.
+- [x] `npm run dev` en la raíz levanta api + dashboard. Verify: ambos responden.
 
 ## Fase 1: entrada e intake
 - [ ] Modelos `WorkItem`, `WorkItemEvent`. Verify: migración.

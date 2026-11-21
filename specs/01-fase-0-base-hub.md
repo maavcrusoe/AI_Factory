@@ -50,12 +50,12 @@ pytest para API (health, conexión DB). Playwright para verificar la pantalla de
 5. `npm run dev` en la raíz levanta ambos.
 
 ## Tareas
-- [ ] Monorepo y `.env.example`. Verify: árbol creado.
-- [ ] API FastAPI + `/health` + test. Verify: `pytest`.
-- [ ] Postgres + Alembic + modelos base. Verify: `alembic upgrade head`.
-- [ ] Dashboard Next.js con página de estado. Verify: Playwright screenshot.
-- [ ] Login local mínimo. Verify: test de login.
-- [ ] Script raíz `npm run dev`. Verify: ambos responden.
+- [x] Monorepo y `.env.example`. Verify: árbol creado.
+- [x] API FastAPI + `/health` + test. Verify: `pytest`.
+- [x] Postgres + Alembic + modelos base. Verify: `alembic upgrade head`.
+- [x] Dashboard Next.js con página de estado. Verify: Playwright screenshot.
+- [x] Login local mínimo. Verify: test de login.
+- [x] Script raíz `npm run dev`. Verify: ambos responden.
 
 ## Preguntas abiertas
 - ¿Postgres instalado en local o en Docker solo para la DB?
