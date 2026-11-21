@@ -9,6 +9,7 @@ os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", DEFAULT_TEST_DB
 os.environ["APP_SECRET_KEY"] = "test-secret"
 os.environ["ADMIN_EMAIL"] = "admin@test.local"
 os.environ["ADMIN_PASSWORD"] = "test-password"
+os.environ["WEBHOOK_SECRET"] = "test-webhook-secret"
 
 import pytest  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402
