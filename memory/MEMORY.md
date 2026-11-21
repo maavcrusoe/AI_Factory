@@ -21,3 +21,4 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-21: Fase 1 completa en PR #2: webhook genérico HMAC (WEBHOOK_SECRET, X-Idempotency-Key obligatoria), plazo total 60 s del intake, barrido al arrancar a WAITING_HUMAN_TRIAGE. Ver specs/decisiones/007.
 - 2026-11-21: Fase 2 en rama factory/fase-2: GitHubAdapter (sondeo 60 s, probado contra meme-demo), AzureDevOpsAdapter con mocks REST (sin org real, pendiente), sincronización de etiquetas con hub ganando, tokens cifrados con Fernet (TOKEN_ENCRYPTION_KEY). Ver specs/decisiones/008.
 - 2026-11-21: Azure DevOps queda para después: no hay org/proyecto aún. Sin pruebas reales; prioridad GitHub y sincronización (aviso del owner).
+- 2026-11-21: Fase 3 en rama factory/fase-3: claim/heartbeat/release/eventos con FOR UPDATE, caducidad 30 min con reloj inyectable, tokens fct_ hasheados, skill /factory. Ver specs/decisiones/009.

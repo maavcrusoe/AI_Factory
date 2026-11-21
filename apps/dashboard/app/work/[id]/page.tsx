@@ -41,6 +41,19 @@ export default async function WorkPage({
 
       {item.reason ? <p className="mb-6 rounded bg-amber-50 p-3 text-sm">{item.reason}</p> : null}
 
+      {item.owner ? (
+        <section className="mb-6 grid gap-4" aria-label="Trabajo asignado">
+          <h2 className="font-medium">Trabajo</h2>
+          <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+            <Field label="Dueño" value={item.owner} />
+            <Field label="Cogido" value={formatDate(item.claimed_at)} />
+            <Field label="Último latido" value={formatDate(item.last_heartbeat_at)} />
+            <Field label="Estado" value={item.heartbeat_state ?? "—"} />
+          </dl>
+          {item.heartbeat_message ? <p className="text-sm">{item.heartbeat_message}</p> : null}
+        </section>
+      ) : null}
+
       <section className="mb-6 grid gap-4">
         <h2 className="font-medium">Valoración del intake</h2>
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -137,4 +150,8 @@ function Field({ label, value }: { label: string; value: string }) {
       <dd className="font-medium">{value}</dd>
     </div>
   );
+}
+
+function formatDate(value: string | null): string {
+  return value ? new Date(value).toLocaleString("es-ES") : "—";
 }

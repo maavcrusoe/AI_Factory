@@ -75,6 +75,11 @@ class WorkItemDetail(WorkItemOut):
     risk: str | None
     reason: str | None
     original_payload: dict[str, Any]
+    owner: str | None
+    claimed_at: datetime | None
+    last_heartbeat_at: datetime | None
+    heartbeat_state: str | None
+    heartbeat_message: str | None
     events: list[EventOut]
 
 
@@ -92,6 +97,11 @@ def _detail(db: Session, item: WorkItem) -> WorkItemDetail:
         risk=item.risk,
         reason=item.reason,
         original_payload=item.original_payload,
+        owner=item.owner,
+        claimed_at=item.claimed_at,
+        last_heartbeat_at=item.last_heartbeat_at,
+        heartbeat_state=item.heartbeat_state,
+        heartbeat_message=item.heartbeat_message,
         events=[EventOut.model_validate(e) for e in events],
     )
 

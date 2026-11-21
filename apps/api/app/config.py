@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     token_encryption_key: str | None = None
     # Sondeo de trackers en segundo plano. Los tests lo desactivan.
     tracker_polling_enabled: bool = True
+    # Caducidad de claims: sin heartbeat durante este tiempo, el item vuelve a QUEUED.
+    heartbeat_timeout_seconds: int = 30 * 60
+    # Job de caducidad en segundo plano, independiente del sondeo de trackers. Los tests lo desactivan.
+    claim_expiry_enabled: bool = True
 
 
 @lru_cache

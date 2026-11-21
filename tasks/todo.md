@@ -30,3 +30,14 @@
 
 ## Fases 3 a 7
 Ver tareas en `specs/04` a `specs/08`. Se desglosan al terminar la fase anterior.
+
+## Fase 3: claim, heartbeat y skill `/factory`
+- [x] Endpoints claim/heartbeat/release/events con `FOR UPDATE`. Verify: test de concurrencia (falla sin el bloqueo).
+- [x] `GET /projects/{id}/queue` y 409 "ya cogido por X". Verify: test HTTP.
+- [x] Job de caducidad (30 min, configurable) con reloj simulado. Verify: tests a -1 s, +1 s y con latido.
+- [x] Tokens por desarrollador hasheados (SHA-256), revocables. Verify: test de BD sin texto plano, 401 con token inválido o revocado.
+- [x] Etiqueta "taken by" en el hub, quitada al liberar o caducar; sincronizada por Fase 2. Verify: test de sincronización (pendiente en remoto real).
+- [x] Migración `0004_claims_y_tokens`. Verify: upgrade, downgrade, upgrade y `alembic check`.
+- [x] Skill `/factory` (cola + claim + heartbeat + release). Verify: ejecución manual con curl contra la API.
+- [x] Dashboard: dueño y latido en el detalle. Verify: Playwright.
+- [ ] Probar `/factory` en meme-demo real. Pendiente: requiere token y repo de cliente con `.factory/config.yaml`.

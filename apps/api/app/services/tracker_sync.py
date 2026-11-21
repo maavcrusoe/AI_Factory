@@ -34,10 +34,17 @@ def desired_managed(item: WorkItem, factory_label: str) -> list[str]:
     return [factory_label, *taken]
 
 
+def replace_taken_label(item: WorkItem, user: str | None) -> None:
+    """Cambia la etiqueta "taken by" en memoria, sin commit. user=None la quita."""
+    labels = [label for label in item.labels if not label.startswith(TAKEN_PREFIX)]
+    if user is not None:
+        labels = [*labels, f"{TAKEN_PREFIX}{user}"]
+    item.labels = labels
+
+
 def set_taken_by(db: Session, item: WorkItem, user: str, actor: str) -> None:
     """El hub marca quién atiende el item. La sincronización la copia al remoto."""
-    item.labels = [label for label in item.labels if not label.startswith(TAKEN_PREFIX)]
-    item.labels = [*item.labels, f"{TAKEN_PREFIX}{user}"]
+    replace_taken_label(item, user)
     record(db, item, "taken_by_set", None, actor, {"user": user})
 
 
