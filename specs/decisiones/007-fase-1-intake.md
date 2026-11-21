@@ -20,3 +20,8 @@
 - Ollama real (`OLLAMA_REAL=1 pytest -m ollama_real`): pasa.
 - Migración `0002_work_items`: upgrade, downgrade, upgrade y `alembic check` sin diferencias.
 - Playwright: login, creación desde formulario, detalle con auditoría, decisión manual y actualización por SSE.
+
+## Pendiente / conocido
+- Latencia de Ollama compartido: en el servidor, algunos items tardaron 2 min en salir de `TRIAGE` (item 7). El timeout de 60 s de httpx no cortó esa espera de forma visible. Pendiente: deadline total explícito alrededor de la llamada.
+- `BackgroundTasks` no sobrevive a un reinicio: un item en `RECEIVED`/`TRIAGE` queda colgado. Pendiente: barrido al arrancar (Fase 5 o 7).
+- Webhook HMAC y adapters GitHub / Azure DevOps: fuera de esta fase.
