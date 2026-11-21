@@ -15,6 +15,9 @@
 - [x] `IntakeModel` + cliente Ollama + schema + fallback humano. Verify: tests con mock.
 - [x] Inbox y detalle en dashboard. Verify: Playwright.
 - [x] Decisión manual + SSE. Verify: test + Playwright.
+- [x] Webhook genérico con firma HMAC + idempotency key obligatoria. Verify: tests (firma válida/inválida, sin clave, duplicado).
+- [x] Plazo total del intake (60 s) -> WAITING_HUMAN_TRIAGE. Verify: test con modelo lento.
+- [x] Barrido al arrancar de items en RECEIVED/NORMALIZING/TRIAGE. Verify: test + reinicio real de la API.
 
 ## Fases 2 a 7
 Ver tareas en `specs/03` a `specs/08`. Se desglosan al terminar la fase anterior.

@@ -143,16 +143,16 @@ def event_frames(after_id: int, poll_seconds: float = 1.0) -> Iterator[str]:
         time.sleep(poll_seconds)
 
 
-@router.post("", response_model=WorkItemOut, status_code=201)
-def create_input(
-    body: InputIn,
-    response: Response,
+def create_item(
+    db: Session,
     background: BackgroundTasks,
-    idempotency_key: Annotated[str, Header(alias="X-Idempotency-Key", min_length=1, max_length=200)],
-    _: Annotated[User, Depends(current_user)],
-    db: Session = Depends(get_db),
-    model: IntakeModel = Depends(get_intake_model),
+    model: IntakeModel,
+    body: InputIn,
+    idempotency_key: str,
+    response: Response,
+    actor: str,
 ) -> WorkItem:
+    """Alta idempotente: misma clave en el mismo proyecto devuelve el item existente (200)."""
     project = find_project(db, body.project_slug)
     existing = find_duplicate(db, project.id, idempotency_key)
     if existing is not None:
@@ -172,7 +172,7 @@ def create_input(
     db.add(item)
     try:
         db.flush()
-        db.add(WorkItemEvent(work_item_id=item.id, kind="received", to_status=RECEIVED, actor=body.source))
+        db.add(WorkItemEvent(work_item_id=item.id, kind="received", to_status=RECEIVED, actor=actor))
         db.commit()
     except IntegrityError:
         # Carrera: otra petición con la misma clave ganó la inserción.
@@ -185,6 +185,19 @@ def create_input(
 
     background.add_task(run_intake, item.id, model)
     return item
+
+
+@router.post("", response_model=WorkItemOut, status_code=201)
+def create_input(
+    body: InputIn,
+    response: Response,
+    background: BackgroundTasks,
+    idempotency_key: Annotated[str, Header(alias="X-Idempotency-Key", min_length=1, max_length=200)],
+    user: Annotated[User, Depends(current_user)],
+    db: Session = Depends(get_db),
+    model: IntakeModel = Depends(get_intake_model),
+) -> WorkItem:
+    return create_item(db, background, model, body, idempotency_key, response, actor=user.email)
 
 
 @router.get("", response_model=list[WorkItemOut])

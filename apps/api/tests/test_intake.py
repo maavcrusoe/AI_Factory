@@ -1,4 +1,5 @@
 import json
+import time
 from collections.abc import Callable
 from typing import Any
 
@@ -9,10 +10,20 @@ from sqlalchemy import delete, func, select
 
 from app.db import SessionLocal
 from app.main import app
-from app.models import WorkItem, WorkItemEvent
+from app.models import Project, WorkItem, WorkItemEvent
 from app.routers.inputs import event_frames
 from app.seed import seed_demo_project
-from app.services.intake import NEEDS_INFO, QUEUED, REJECTED, WAITING_HUMAN_TRIAGE, plan_outcome
+from app.config import get_settings
+from app.services.intake import (
+    NEEDS_INFO,
+    QUEUED,
+    RECEIVED,
+    REJECTED,
+    TRIAGE,
+    WAITING_HUMAN_TRIAGE,
+    plan_outcome,
+    sweep_stuck_items,
+)
 from app.services.intake_model import IntakeAssessment, IntakeInput
 from app.services.llm_ollama import OllamaIntakeModel, get_intake_model
 
@@ -238,3 +249,48 @@ def test_plan_outcome_thresholds(decision: str, confidence: float, expected: str
     assert status == expected
 
 
+
+
+def test_model_slower_than_deadline_goes_to_human_triage(monkeypatch: pytest.MonkeyPatch) -> None:
+    class SlowModel:
+        def assess(self, item: IntakeInput) -> IntakeAssessment:
+            time.sleep(1.0)
+            return assessment()
+
+    monkeypatch.setattr(get_settings(), "intake_deadline_seconds", 0.2)
+    use_model(SlowModel())
+    item_id = post_input().json()["id"]
+    detail = client.get(f"/api/v1/inputs/{item_id}").json()
+    assert detail["status"] == WAITING_HUMAN_TRIAGE
+    assert "plazo" in detail["reason"]
+    assert detail["events"][-1]["kind"] == "intake_failed"
+
+
+def test_startup_sweep_moves_stuck_items_to_human_triage() -> None:
+    with SessionLocal() as db:
+        project = db.scalar(select(Project).where(Project.slug == "meme-demo"))
+        assert project is not None
+        for key, status in [("s-recv", RECEIVED), ("s-triage", TRIAGE), ("s-queued", QUEUED)]:
+            db.add(
+                WorkItem(
+                    project_id=project.id,
+                    idempotency_key=key,
+                    source="api",
+                    original_payload={"projectId": "meme-demo", "title": "t", "body": "b"},
+                    title="t",
+                    body="b",
+                    status=status,
+                    labels=[],
+                )
+            )
+        db.commit()
+        assert sweep_stuck_items(db) == 2
+        statuses = {
+            i.idempotency_key: i.status
+            for i in db.scalars(select(WorkItem)).all()
+        }
+    assert statuses == {
+        "s-recv": WAITING_HUMAN_TRIAGE,
+        "s-triage": WAITING_HUMAN_TRIAGE,
+        "s-queued": QUEUED,
+    }

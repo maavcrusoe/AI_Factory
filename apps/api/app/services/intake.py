@@ -1,11 +1,16 @@
 """Máquina de estados del intake y decisiones manuales. Cada cambio deja un WorkItemEvent."""
 
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
+
 from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import SessionLocal
 from app.models import WorkItem, WorkItemEvent
-from app.services.intake_model import IntakeAssessment, IntakeInput, IntakeModel
+from app.services.intake_model import IntakeAssessment, IntakeInput, IntakeModel, IntakeModelError
 
 RECEIVED = "RECEIVED"
 NORMALIZING = "NORMALIZING"
@@ -21,6 +26,30 @@ ACCEPT_THRESHOLD = 0.80
 REVIEW_THRESHOLD = 0.65
 
 MANUAL_FROM = {WAITING_HUMAN_TRIAGE, NEEDS_INFO}
+STUCK_FROM = (RECEIVED, NORMALIZING, TRIAGE)
+
+
+def assess_with_deadline(model: IntakeModel, item: IntakeInput, deadline: float) -> IntakeAssessment:
+    """Plazo total duro: el timeout de httpx no basta (no cubre toda la espera)."""
+    executor = ThreadPoolExecutor(max_workers=1)
+    future = executor.submit(model.assess, item)
+    try:
+        return future.result(timeout=deadline)
+    except FutureTimeout as exc:
+        raise IntakeModelError(f"plazo de {deadline:g} s superado") from exc
+    finally:
+        # No esperar: la llamada colgada termina sola por el timeout de httpx.
+        executor.shutdown(wait=False, cancel_futures=True)
+
+
+def sweep_stuck_items(db: Session) -> int:
+    """Al arrancar: lo que quedó a medias por un reinicio pasa a revisión humana."""
+    items = db.scalars(select(WorkItem).where(WorkItem.status.in_(STUCK_FROM))).all()
+    for item in items:
+        previous = item.status
+        item.reason = "Interrumpido por reinicio del hub: decide un humano"
+        record(db, item, "startup_sweep", WAITING_HUMAN_TRIAGE, "system", {"previous": previous})
+    return len(items)
 
 
 def plan_outcome(assessment: IntakeAssessment) -> tuple[str, str | None]:
@@ -74,7 +103,8 @@ def run_intake(work_item_id: int, model: IntakeModel) -> None:
         record(db, item, "triage_started", TRIAGE, "intake")
 
         try:
-            assessment = model.assess(intake_input)
+            deadline = get_settings().intake_deadline_seconds
+            assessment = assess_with_deadline(model, intake_input, deadline)
         except Exception as exc:  # noqa: BLE001 - cualquier fallo del modelo va a humano, nunca auto-acepta
             item.reason = f"Intake fallido: {exc}"
             record(db, item, "intake_failed", WAITING_HUMAN_TRIAGE, "intake", {"reason": str(exc)})

@@ -29,6 +29,17 @@ def _sign(payload: str, secret: str) -> str:
     return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 
+def sign_body(body: bytes, secret: str) -> str:
+    return "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+
+def verify_signature(body: bytes, header: str | None, secret: str | None) -> bool:
+    """Compara la firma `sha256=<hex>` del cuerpo crudo en tiempo constante."""
+    if not secret or not header:
+        return False
+    return hmac.compare_digest(header, sign_body(body, secret))
+
+
 def create_token(email: str, secret: str, ttl_seconds: int) -> str:
     body = {"sub": email, "exp": int(time.time()) + ttl_seconds}
     payload = base64.urlsafe_b64encode(json.dumps(body).encode()).decode()
