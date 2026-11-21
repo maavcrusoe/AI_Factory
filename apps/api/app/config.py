@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     # Secreto compartido del webhook genérico. Sin valor, el webhook rechaza todo.
     # ponytail: secreto global; por proyecto cuando haya adapters de GitHub/Azure DevOps.
     webhook_secret: str | None = None
+    # Clave Fernet para cifrar tokens de proyecto. Sin valor, no se guarda ningún token.
+    token_encryption_key: str | None = None
+    # Sondeo de trackers en segundo plano. Los tests lo desactivan.
+    tracker_polling_enabled: bool = True
 
 
 @lru_cache

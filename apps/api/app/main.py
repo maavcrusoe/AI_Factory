@@ -1,14 +1,17 @@
 import logging
+import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.config import get_settings
 from app.db import SessionLocal
-from app.routers import auth, health, inputs, webhooks
+from app.routers import auth, health, inputs, integrations, webhooks
 from app.seed import seed_admin, seed_demo_project
 from app.services.intake import sweep_stuck_items
+from app.services.poller import poll_forever
 
 logger = logging.getLogger("factory")
 
@@ -25,11 +28,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     except SQLAlchemyError:
         # Sin DB la API arranca igual: /health informa del fallo.
         logger.warning("No se pudo sembrar el admin: base de datos no disponible")
+    stop = threading.Event()
+    if get_settings().tracker_polling_enabled:
+        threading.Thread(target=poll_forever, args=(stop,), daemon=True).start()
     yield
+    stop.set()
 
 
 app = FastAPI(title="AI Factory API", version="0.1.0", lifespan=lifespan)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(inputs.router)
+app.include_router(integrations.router)
 app.include_router(webhooks.router)

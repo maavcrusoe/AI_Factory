@@ -19,3 +19,5 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-21: Fase 0 implementada en rama factory/fase-0: Postgres 16 solo en Docker, API uv+FastAPI, dashboard Next 16, login admin desde .env. Ver specs/decisiones/006.
 - 2026-11-21: Fase 1 implementada en rama factory/fase-1: WorkItem + eventos auditados, POST inputs con idempotencia, intake Ollama qwen3.5:4b (think false, schema, timeout 60 s, fallo -> WAITING_HUMAN_TRIAGE), inbox/detalle/decisión/SSE. Ver specs/decisiones/007.
 - 2026-11-21: Fase 1 completa en PR #2: webhook genérico HMAC (WEBHOOK_SECRET, X-Idempotency-Key obligatoria), plazo total 60 s del intake, barrido al arrancar a WAITING_HUMAN_TRIAGE. Ver specs/decisiones/007.
+- 2026-11-21: Fase 2 en rama factory/fase-2: GitHubAdapter (sondeo 60 s, probado contra meme-demo), AzureDevOpsAdapter con mocks REST (sin org real, pendiente), sincronización de etiquetas con hub ganando, tokens cifrados con Fernet (TOKEN_ENCRYPTION_KEY). Ver specs/decisiones/008.
+- 2026-11-21: Azure DevOps queda para después: no hay org/proyecto aún. Sin pruebas reales; prioridad GitHub y sincronización (aviso del owner).
