@@ -1,3 +1,4 @@
+import Link from "next/link";
 export const instant = false;
 
 import { cookies } from "next/headers";
@@ -34,6 +35,9 @@ export default async function StatusPage() {
   return (
     <main className="mx-auto w-full max-w-2xl gap-6 p-4 sm:p-8">
       <h1 className="mb-6 text-2xl font-semibold">Estado del hub</h1>
+      <Link href="/inbox" className="mb-4 inline-block text-sm underline">
+        Ir a la bandeja
+      </Link>
       <ul className="grid gap-3">
         <StatusRow label="API" ok={apiOk} detail={apiOk ? "Respondiendo" : `No disponible en ${API_URL}`} />
         <StatusRow label="Base de datos" ok={dbOk} detail={dbOk ? "Conectada" : "Sin conexión"} />

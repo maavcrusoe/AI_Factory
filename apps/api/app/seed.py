@@ -2,8 +2,10 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.models import User
+from app.models import Project, User
 from app.security import hash_password
+
+DEMO_PROJECT = {"slug": "meme-demo", "name": "Demo de memes"}
 
 
 def seed_admin() -> None:
@@ -20,3 +22,11 @@ def seed_admin() -> None:
         admin.role = "admin"
         admin.is_active = True
         db.commit()
+
+
+def seed_demo_project() -> None:
+    """Proyecto de demo del hub (idempotente)."""
+    with SessionLocal() as db:
+        if db.scalar(select(Project).where(Project.slug == DEMO_PROJECT["slug"])) is None:
+            db.add(Project(**DEMO_PROJECT))
+            db.commit()
