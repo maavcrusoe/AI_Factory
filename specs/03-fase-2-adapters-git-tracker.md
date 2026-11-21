@@ -25,11 +25,11 @@ Entrada y salida con GitHub y Azure DevOps mediante una interfaz común. El hub 
 - Ask first: añadir un tercer proveedor.
 
 ## Tareas
-- [ ] Interfaces y `GenericAdapter`.
-- [ ] `GitHubAdapter` leer/comentar/etiquetar. Verify: tests con meme-demo.
-- [ ] `AzureDevOpsAdapter`. Verify: tests con mock REST.
-- [ ] Sincronizador de etiquetas (hub gana). Verify: test de reversión.
+- [x] Interfaces y `GenericAdapter`.
+- [x] `GitHubAdapter` leer/comentar/etiquetar. Verify: tests con meme-demo (`GITHUB_REAL=1`).
+- [x] `AzureDevOpsAdapter`. Verify: tests con mock REST. Sin pruebas reales: no hay org aún.
+- [x] Sincronizador de etiquetas (hub gana). Verify: test de reversión.
 
 ## Preguntas abiertas
-- Frecuencia de polling para AzDO.
-- Organización/proyecto AzDO de pruebas.
+- ~~Frecuencia de polling para AzDO~~: resuelta, 5 min por defecto, configurable (`pollSeconds`). Ver `specs/decisiones/008`.
+- Organización/proyecto AzDO de pruebas: pendiente, el owner indicó que llegará más adelante.

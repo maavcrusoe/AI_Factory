@@ -10,6 +10,10 @@ os.environ["APP_SECRET_KEY"] = "test-secret"
 os.environ["ADMIN_EMAIL"] = "admin@test.local"
 os.environ["ADMIN_PASSWORD"] = "test-password"
 os.environ["WEBHOOK_SECRET"] = "test-webhook-secret"
+os.environ["TRACKER_POLLING_ENABLED"] = "false"
+from cryptography.fernet import Fernet  # noqa: E402
+
+os.environ["TOKEN_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 import pytest  # noqa: E402
 from sqlalchemy import create_engine, text  # noqa: E402

@@ -8,16 +8,16 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, 
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, get_db
 from app.models import User, WorkItem, WorkItemEvent
 from app.routers.auth import current_user
-from app.services.intake import RECEIVED, apply_manual_decision, record, run_intake
+from app.services.ingest import ingest
+from app.services.intake import apply_manual_decision, run_intake
 from app.services.intake_model import IntakeModel
 from app.services.llm_ollama import get_intake_model
-from app.services.rules import find_duplicate, find_project
+from app.services.rules import find_project
 
 router = APIRouter(prefix="/api/v1/inputs", tags=["inputs"])
 
@@ -154,35 +154,19 @@ def create_item(
 ) -> WorkItem:
     """Alta idempotente: misma clave en el mismo proyecto devuelve el item existente (200)."""
     project = find_project(db, body.project_slug)
-    existing = find_duplicate(db, project.id, idempotency_key)
-    if existing is not None:
-        response.status_code = 200
-        return existing
-
-    item = WorkItem(
-        project_id=project.id,
-        idempotency_key=idempotency_key,
+    item, created = ingest(
+        db,
+        project,
         source=body.source,
-        original_payload=body.model_dump(by_alias=True),
-        title=body.title.strip(),
-        body=body.body.strip(),
-        status=RECEIVED,
-        labels=[],
+        title=body.title,
+        body=body.body,
+        payload=body.model_dump(by_alias=True, exclude={"project_slug"}),
+        idempotency_key=idempotency_key,
+        actor=actor,
     )
-    db.add(item)
-    try:
-        db.flush()
-        db.add(WorkItemEvent(work_item_id=item.id, kind="received", to_status=RECEIVED, actor=actor))
-        db.commit()
-    except IntegrityError:
-        # Carrera: otra petición con la misma clave ganó la inserción.
-        db.rollback()
-        existing = find_duplicate(db, project.id, idempotency_key)
-        if existing is None:
-            raise
+    if not created:
         response.status_code = 200
-        return existing
-
+        return item
     background.add_task(run_intake, item.id, model)
     return item
 
