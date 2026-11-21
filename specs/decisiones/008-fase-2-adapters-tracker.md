@@ -16,7 +16,7 @@
 - **Fuera de este PR**: UI en el dashboard (no necesaria para esta fase), claim y `taken by` desde la API (Fase 3), `get_diff` y el resto de operaciones de repo en Azure DevOps.
 
 ## Verificación
-- `pytest`: 53 pasan, 2 se saltan (Ollama real y GitHub real). `GITHUB_REAL=1 pytest -m github_real`: pasa.
+- `pytest`: 54 pasan, 2 se saltan (Ollama real y GitHub real). `GITHUB_REAL=1 pytest -m github_real`: pasa.
 - Enlace roto (404) no frena la sincronización de los demás enlaces del proyecto; se registra por tipo de error.
 - Cambiar `repo` (GitHub) o `organization`/`project`/`repo` (Azure DevOps) o de proveedor devuelve 409 mientras haya items enlazados.
 - Migración `0003`: upgrade, downgrade, upgrade y `alembic check` sin diferencias.
