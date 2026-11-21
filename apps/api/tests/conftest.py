@@ -11,6 +11,7 @@ os.environ["ADMIN_EMAIL"] = "admin@test.local"
 os.environ["ADMIN_PASSWORD"] = "test-password"
 os.environ["WEBHOOK_SECRET"] = "test-webhook-secret"
 os.environ["TRACKER_POLLING_ENABLED"] = "false"
+os.environ["CLAIM_EXPIRY_ENABLED"] = "false"
 from cryptography.fernet import Fernet  # noqa: E402
 
 os.environ["TOKEN_ENCRYPTION_KEY"] = Fernet.generate_key().decode()

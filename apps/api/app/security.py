@@ -58,3 +58,15 @@ def read_token(token: str, secret: str) -> str | None:
     if body.get("exp", 0) < time.time():
         return None
     return body.get("sub")
+
+
+API_TOKEN_PREFIX = "fct_"
+
+
+def new_api_token() -> str:
+    return API_TOKEN_PREFIX + secrets.token_urlsafe(32)
+
+
+def hash_api_token(token: str) -> str:
+    """SHA-256 basta: el token ya tiene 256 bits de entropía. Nunca se guarda el valor en claro."""
+    return hashlib.sha256(token.encode()).hexdigest()

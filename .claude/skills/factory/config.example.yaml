@@ -1,0 +1,4 @@
+# Copiar a .factory/config.yaml en la raíz del repo del proyecto (no al hub).
+# El token NO va aquí: se pasa en la variable de entorno FACTORY_TOKEN.
+projectId: meme-demo
+hubUrl: http://localhost:8000

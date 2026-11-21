@@ -8,7 +8,8 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.db import get_db
 from app.models import User
-from app.security import create_token, read_token, verify_password
+from app.security import API_TOKEN_PREFIX, create_token, read_token, verify_password
+from app.services.tokens import user_by_api_token
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -47,8 +48,13 @@ def current_user(
     db: Session = Depends(get_db),
 ) -> User:
     scheme, _, token = (authorization or "").partition(" ")
-    email = read_token(token, get_settings().app_secret_key) if scheme.lower() == "bearer" else None
-    user = db.scalar(select(User).where(User.email == email, User.is_active.is_(True))) if email else None
+    if scheme.lower() != "bearer":
+        user = None
+    elif token.startswith(API_TOKEN_PREFIX):
+        user = user_by_api_token(db, token)
+    else:
+        email = read_token(token, get_settings().app_secret_key)
+        user = db.scalar(select(User).where(User.email == email, User.is_active.is_(True))) if email else None
     if user is None:
         raise HTTPException(status_code=401, detail="No autenticado")
     return user

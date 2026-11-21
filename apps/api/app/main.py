@@ -8,8 +8,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.routers import auth, health, inputs, integrations, webhooks
+from app.routers import auth, health, inputs, integrations, tokens, webhooks, work
 from app.seed import seed_admin, seed_demo_project
+from app.services.claims import expire_forever
 from app.services.intake import sweep_stuck_items
 from app.services.poller import poll_forever
 
@@ -31,6 +32,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     stop = threading.Event()
     if get_settings().tracker_polling_enabled:
         threading.Thread(target=poll_forever, args=(stop,), daemon=True).start()
+    if get_settings().claim_expiry_enabled:
+        threading.Thread(target=expire_forever, args=(stop,), daemon=True).start()
     yield
     stop.set()
 
@@ -41,3 +44,5 @@ app.include_router(auth.router)
 app.include_router(inputs.router)
 app.include_router(integrations.router)
 app.include_router(webhooks.router)
+app.include_router(work.router)
+app.include_router(tokens.router)

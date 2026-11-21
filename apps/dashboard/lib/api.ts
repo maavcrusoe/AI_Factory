@@ -31,6 +31,11 @@ export type WorkItemDetail = WorkItem & {
   difficulty: string | null;
   risk: string | null;
   reason: string | null;
+  owner: string | null;
+  claimed_at: string | null;
+  last_heartbeat_at: string | null;
+  heartbeat_state: string | null;
+  heartbeat_message: string | null;
   events: WorkEvent[];
 };
 
