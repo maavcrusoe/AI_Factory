@@ -4,7 +4,17 @@ Monorepo del hub de AI Factory (ver `specs/` y `PLAN.md`).
 
 - `apps/api`: API FastAPI + SQLAlchemy 2 + Alembic (Python 3.12, uv).
 - `apps/dashboard`: dashboard Next.js + TypeScript.
-- `docker-compose.yml`: solo PostgreSQL 16 en Docker.
+- `docker-compose.yml`: hub completo (PostgreSQL 16, migraciones, API y dashboard).
+- `docs/runbooks/`: operación (despliegue, backup y restore, rotación de tokens, items atascados, Ollama, métricas y logs).
+
+## Despliegue con Docker (servidor)
+
+```sh
+cp .env.example .env          # rellenar secretos (ver runbook de despliegue)
+docker compose up -d --build  # base -> migraciones -> API -> dashboard
+```
+
+Procedimiento completo en `docs/runbooks/despliegue.md`.
 
 ## Puesta en marcha (local)
 

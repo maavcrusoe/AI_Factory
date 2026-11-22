@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     log_retention_days: int = Field(default=30, ge=1, le=3650)
     # Job de limpieza en segundo plano. Los tests lo desactivan.
     log_retention_enabled: bool = True
+    # Logs estructurados: "json" (una línea por evento) o "text" (desarrollo).
+    log_format: str = "json"
+    log_level: str = "INFO"
 
 
 @lru_cache

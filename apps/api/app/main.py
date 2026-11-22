@@ -1,21 +1,25 @@
 import logging
 import threading
-from collections.abc import AsyncIterator
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.routers import admin, approvals, auth, health, inputs, integrations, projects, tokens, webhooks, work
+from app.logging_setup import configure_logging
+from app.routers import admin, approvals, auth, health, inputs, integrations, metrics, projects, tokens, webhooks, work
 from app.seed import seed_admin, seed_demo_project
 from app.services.claims import expire_forever
 from app.services.intake import sweep_stuck_items
 from app.services.poller import poll_forever
 from app.services.retention import purge_forever
 
+configure_logging(get_settings().log_format, get_settings().log_level)
 logger = logging.getLogger("factory")
+http_logger = logging.getLogger("factory.http")
 
 
 @asynccontextmanager
@@ -42,7 +46,29 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="AI Factory API", version="0.1.0", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def access_log(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    """Una línea JSON por petición. Solo ruta, sin query string: no se registran tokens ni datos."""
+    started = time.perf_counter()
+    fields = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)
+    except Exception:
+        # Un fallo no capturado sale de call_next sin respuesta: se registra como 500 y se relanza.
+        duration = round((time.perf_counter() - started) * 1000, 1)
+        http_logger.exception("request", extra={**fields, "status": 500, "duration_ms": duration})
+        raise
+    http_logger.info(
+        "request",
+        extra={**fields, "status": response.status_code, "duration_ms": round((time.perf_counter() - started) * 1000, 1)},
+    )
+    return response
+
+
 app.include_router(health.router)
+app.include_router(metrics.router)
 app.include_router(auth.router)
 app.include_router(inputs.router)
 app.include_router(integrations.router)

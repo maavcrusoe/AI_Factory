@@ -1,0 +1,9 @@
+# Desarrollo local: publica PostgreSQL solo en loopback para que `npm run dev` (API y dashboard en el host) lo alcance.
+# No usar en el servidor. Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db
+services:
+  db:
+    networks:
+      - backend
+      - edge
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"

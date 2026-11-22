@@ -7,8 +7,8 @@
     "dev": "concurrently -n api,dashboard -c blue,magenta \"npm run dev:api\" \"npm run dev:dashboard\"",
     "dev:api": "cd apps/api && uv run uvicorn app.main:app --reload --port 8000",
     "dev:dashboard": "cd apps/dashboard && npm run dev",
-    "db:up": "docker compose up -d db",
-    "db:down": "docker compose down",
+    "db:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db",
+    "db:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
     "migrate": "cd apps/api && uv run alembic upgrade head",
     "test:api": "cd apps/api && uv run pytest"
   },
