@@ -33,7 +33,8 @@ scripts/backup.sh
 CONFIRM=si scripts/restore.sh backups/factory-AAAAMMDDTHHMMSSZ.dump
 ```
 
-Lo que hace, en orden: para `api` y `dashboard`, recrea la base, ejecuta `pg_restore --exit-on-error`,
+Lo que hace, en orden: comprueba con `pg_restore -l` que el fichero es un dump legible (si no lo es, sale
+con error y no toca la base), para `api` y `dashboard`, recrea la base, ejecuta `pg_restore --exit-on-error`,
 corre `migrate` (por si la copia es de una versión anterior del esquema) y vuelve a arrancar la API y el
 dashboard. Después:
 
