@@ -3,6 +3,7 @@ export const instant = false;
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { SiteNav } from "@/components/site-nav";
 import { API_URL, SESSION_COOKIE } from "@/lib/config";
 
 type Health = { status: string; database: string };
@@ -35,6 +36,7 @@ export default async function StatusPage() {
   return (
     <main className="mx-auto w-full max-w-2xl gap-6 p-4 sm:p-8">
       <h1 className="mb-6 text-2xl font-semibold">Estado del hub</h1>
+      <SiteNav isAdmin={me.role === "admin"} />
       <Link href="/inbox" className="mb-4 inline-block text-sm underline">
         Ir a la bandeja
       </Link>

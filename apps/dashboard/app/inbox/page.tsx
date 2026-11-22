@@ -2,8 +2,9 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LiveRefresh } from "@/components/live-refresh";
+import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
-import { apiFetch, type WorkItem } from "@/lib/api";
+import { apiFetch, fetchJson, type Me, type WorkItem } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 import { createInputAction } from "./actions";
 
@@ -20,11 +21,13 @@ export default async function InboxPage({
   const response = await apiFetch("/api/v1/inputs", token).catch(() => null);
   if (!response || response.status === 401) redirect("/login");
   const items = (await response.json()) as WorkItem[];
+  const me = await fetchJson<Me>("/api/v1/auth/me", token);
   const { error } = await searchParams;
   const idempotencyKey = crypto.randomUUID();
 
   return (
     <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+      <SiteNav isAdmin={me?.role === "admin"} />
       <LiveRefresh />
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Bandeja</h1>
