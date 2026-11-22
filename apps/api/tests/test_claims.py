@@ -22,7 +22,7 @@ TIMEOUT = 1800
 
 def _ensure_user(db, email: str) -> None:
     if db.scalar(select(User).where(User.email == email)) is None:
-        db.add(User(email=email, password_hash=hash_password("pw-test"), role="member"))
+        db.add(User(email=email, password_hash=hash_password("pw-test"), role="developer"))
         db.commit()
 
 

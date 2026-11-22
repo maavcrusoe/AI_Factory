@@ -28,9 +28,14 @@ export default async function InboxPage({
       <LiveRefresh />
       <header className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Bandeja</h1>
-        <Link href="/status" className="text-sm underline">
-          Estado del hub
-        </Link>
+        <nav className="flex gap-4 text-sm">
+          <Link href="/approvals" className="underline">
+            Aprobaciones
+          </Link>
+          <Link href="/status" className="underline">
+            Estado del hub
+          </Link>
+        </nav>
       </header>
 
       <form action={createInputAction} className="mb-8 grid gap-3 rounded border p-4">

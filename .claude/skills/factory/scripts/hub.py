@@ -68,6 +68,31 @@ class HubClient:
             "POST", f"/api/v1/work/{item_id}/complete", {"pr_url": pr_url, "pr_number": pr_number}
         )
 
+    def gate_report(
+        self,
+        item_id: int,
+        *,
+        sha: str,
+        passed: bool,
+        meaning: str,
+        planned: bool,
+        touched_paths: list[str],
+        review_findings: list[str],
+    ) -> dict[str, Any]:
+        """Gate final sobre el SHA del PR. Sin outbox: si falla, la reanudación lo repite."""
+        return self._request(
+            "POST",
+            f"/api/v1/work/{item_id}/gate-report",
+            {
+                "sha": sha,
+                "result": "passed" if passed else "failed",
+                "meaning_change": meaning,
+                "planned": planned,
+                "touched_paths": touched_paths[:500],
+                "review_findings": [f[:1000] for f in review_findings][:50],
+            },
+        )
+
     # --- subidas: pasan por el outbox si la red corta -------------------------------
     def event(self, item_id: int, kind: str, message: str, detail: dict[str, Any] | None = None) -> None:
         self._upload(f"/api/v1/work/{item_id}/events", {"kind": kind, "message": message[:2000], "detail": detail})

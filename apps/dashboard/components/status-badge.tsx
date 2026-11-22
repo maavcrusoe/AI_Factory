@@ -7,6 +7,10 @@ const TONE: Record<string, string> = {
   WAITING_HUMAN_TRIAGE: "bg-amber-100 text-amber-900",
   NEEDS_INFO: "bg-sky-100 text-sky-900",
   REJECTED: "bg-red-100 text-red-800",
+  WAITING_HUMAN_MERGE: "bg-amber-100 text-amber-900",
+  READY_TO_MERGE: "bg-green-100 text-green-800",
+  FIXING: "bg-red-100 text-red-800",
+  MERGED: "bg-green-200 text-green-900",
 };
 
 export function StatusBadge({ status }: { status: string }) {

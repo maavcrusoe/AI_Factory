@@ -51,3 +51,18 @@ Ver tareas en `specs/04` a `specs/08`. Se desglosan al terminar la fase anterior
 - [x] Skill `/factory` (cola + claim + heartbeat + release). Verify: ejecución manual con curl contra la API.
 - [x] Dashboard: dueño y latido en el detalle. Verify: Playwright.
 - [ ] Probar `/factory` en meme-demo real. Pendiente: requiere token y repo de cliente con `.factory/config.yaml`.
+
+## Fase 5: políticas, roles y merge
+- [x] Roles `admin`/`developer`/`reviewer` (`member` migrado) + `require_role` en /factory, aprobaciones y admin. Verify: `test_approvals.py` (403/401).
+- [x] Usuarios por admin (`POST /api/v1/users`). Verify: test 201/409/422.
+- [x] Política por proyecto versionada (`merge_policies`), default todo-humano, editable por admin. Verify: `test_merge_policy.py` y test HTTP de versiones.
+- [x] Motor de política puro (dificultad, rutas sensibles, no planificado, significado, datos que faltan). Verify: tests por regla.
+- [x] Informe del gate final por SHA (`gate-report`) y veredicto `WAITING_HUMAN_MERGE` / `READY_TO_MERGE`. Verify: tests HTTP con política por defecto y relajada.
+- [x] Aprobación, cambios pedidos y merge con bloqueo optimista (`expected_version`). Verify: test de doble aprobación con misma versión -> 409.
+- [x] Merge controlado vía `RepoAdapter` con credencial de merge separada, verificación de SHA y `mark_ready`. Verify: transporte falso (`FakeGitHub`), no GitHub real.
+- [x] Auditoría de cada decisión (`WorkItemEvent`). Verify: test de eventos.
+- [x] Migración `0006_politicas_roles_merge`. Verify: downgrade/upgrade en conftest, `alembic check`.
+- [x] Pantalla `/approvals` y detalle con diff, gate, política y botones. Verify: Playwright (aprobar en BD local, sin merge).
+- [x] Cliente: gate final sobre el HEAD del PR y `MEANING`/`PLANNED` en el code-reviewer. Verify: unittest del pipeline (29 pasan).
+- [ ] Merge real en meme-demo. No se hace: la brief lo prohíbe.
+- [ ] Confirmar contra docs de GitHub que la API de merge rechaza borradores (la consulta de docs falló en esta sesión).

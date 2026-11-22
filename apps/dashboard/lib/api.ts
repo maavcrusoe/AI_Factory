@@ -36,6 +36,17 @@ export type WorkItemDetail = WorkItem & {
   last_heartbeat_at: string | null;
   heartbeat_state: string | null;
   heartbeat_message: string | null;
+  pr_number: number | null;
+  pr_url: string | null;
+  gate_sha: string | null;
+  gate_result: string | null;
+  meaning_change: string | null;
+  planned: boolean | null;
+  touched_paths: string[] | null;
+  review_findings: string[] | null;
+  approval_version: number;
+  policy_version: number | null;
+  policy_reasons: string[] | null;
   events: WorkEvent[];
 };
 
@@ -59,9 +70,15 @@ export const STATUS_LABEL: Record<string, string> = {
   NEEDS_INFO: "Falta información",
   WAITING_HUMAN_TRIAGE: "Revisión humana",
   REJECTED: "Rechazada",
+  FIXING: "Cambios pedidos",
+  WAITING_HUMAN_MERGE: "Aprobación humana",
+  READY_TO_MERGE: "Lista para mergear",
+  MERGING: "Mergeando",
+  MERGED: "Mergeada",
 };
 
 export const DECIDABLE = new Set(["WAITING_HUMAN_TRIAGE", "NEEDS_INFO"]);
+export const APPROVAL_QUEUE = new Set(["WAITING_HUMAN_MERGE", "READY_TO_MERGE", "MERGING"]);
 
 export function apiFetch(path: string, token: string, init: RequestInit = {}): Promise<Response> {
   return fetch(`${API_URL}${path}`, {

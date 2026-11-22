@@ -61,3 +61,12 @@ class ParsingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReviewFactsTest(unittest.TestCase):
+    def test_lines_are_parsed_and_last_one_wins(self):
+        facts = rounds.parse_review_facts("MEANING: minor\nPLANNED: no\nMEANING: major\nPLANNED: yes\n")
+        self.assertEqual(facts, {"meaning": "major", "planned": True})
+
+    def test_missing_lines_are_the_cautious_defaults(self):
+        self.assertEqual(rounds.parse_review_facts("VERDICT: APPROVE"), {"meaning": "dubious", "planned": False})

@@ -21,7 +21,7 @@ def clean_integrations():
         project = db.scalar(select(Project).where(Project.slug == SLUG))
         db.execute(delete(ProjectIntegration).where(ProjectIntegration.project_id == project.id))
         db.execute(delete(User).where(User.email == "miembro@test.local"))
-        db.add(User(email="miembro@test.local", password_hash=hash_password("x-pass"), role="member"))
+        db.add(User(email="miembro@test.local", password_hash=hash_password("x-pass"), role="developer"))
         db.commit()
     yield
     with SessionLocal() as db:

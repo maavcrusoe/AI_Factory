@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.adapters import ADAPTERS
 from app.db import get_db
 from app.models import ProjectIntegration, TrackerLink, User
-from app.routers.auth import current_user
+from app.routers.auth import Admin, current_user
 from app.services.crypto import TokenCryptoError, encrypt_token
 from app.services.rules import find_project
 
@@ -26,12 +26,18 @@ class IntegrationIn(BaseModel):
     token: str | None = Field(default=None, min_length=1, max_length=500)
 
 
+class MergeCredentialIn(BaseModel):
+    # Solo escritura. Es un token distinto del tracker y del cliente: solo lo usa el controlador de merge.
+    token: str = Field(min_length=1, max_length=500)
+
+
 class IntegrationOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     provider: str
     config: dict[str, Any]
     has_token: bool
+    has_merge_token: bool
     last_polled_at: datetime | None
 
     @classmethod
@@ -40,6 +46,7 @@ class IntegrationOut(BaseModel):
             provider=integration.provider,
             config=integration.config,
             has_token=integration.token_encrypted is not None,
+            has_merge_token=integration.merge_token_encrypted is not None,
             last_polled_at=integration.last_polled_at,
         )
 
@@ -71,11 +78,9 @@ def _validate_config(body: IntegrationIn) -> None:
 def put_integration(
     slug: str,
     body: IntegrationIn,
-    user: Annotated[User, Depends(current_user)],
+    _: Admin,
     db: Session = Depends(get_db),
 ) -> IntegrationOut:
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Solo un admin configura integraciones")
     project = find_project(db, slug)
     _validate_config(body)
     integration = db.scalar(select(ProjectIntegration).where(ProjectIntegration.project_id == project.id))
@@ -87,6 +92,10 @@ def put_integration(
     if integration is None:
         integration = ProjectIntegration(project_id=project.id, provider=body.provider)
         db.add(integration)
+    else:
+        # Una credencial de merge solo vale para el repo que la recibió.
+        if _scope_changed(integration, body):
+            integration.merge_token_encrypted = None
     if body.provider != integration.provider and body.token is None:
         integration.token_encrypted = None
     integration.provider = body.provider
@@ -100,6 +109,25 @@ def put_integration(
     if body.provider != "generic" and integration.token_encrypted is None:
         db.rollback()
         raise HTTPException(status_code=422, detail="Token requerido para este proveedor")
+    db.commit()
+    return IntegrationOut.of(integration)
+
+
+@router.put("/{slug}/merge-credential", response_model=IntegrationOut)
+def put_merge_credential(
+    slug: str,
+    body: MergeCredentialIn,
+    _: Admin,
+    db: Session = Depends(get_db),
+) -> IntegrationOut:
+    project = find_project(db, slug)
+    integration = db.scalar(select(ProjectIntegration).where(ProjectIntegration.project_id == project.id))
+    if integration is None:
+        raise HTTPException(status_code=404, detail="Configura primero la integración del proyecto")
+    try:
+        integration.merge_token_encrypted = encrypt_token(body.token)
+    except TokenCryptoError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     db.commit()
     return IntegrationOut.of(integration)
 

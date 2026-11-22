@@ -17,6 +17,8 @@ class ProjectIntegration(Base):
     provider: Mapped[str] = mapped_column(String(20))
     config: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     token_encrypted: Mapped[str | None] = mapped_column(Text)
+    # Credencial separada: solo la usa el controlador de merge (Fase 5). Nunca la ven el cliente ni el tracker.
+    merge_token_encrypted: Mapped[str | None] = mapped_column(Text)
     last_polled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import get_settings
 from app.db import SessionLocal
-from app.routers import auth, health, inputs, integrations, tokens, webhooks, work
+from app.routers import admin, approvals, auth, health, inputs, integrations, tokens, webhooks, work
 from app.seed import seed_admin, seed_demo_project
 from app.services.claims import expire_forever
 from app.services.intake import sweep_stuck_items
@@ -46,3 +46,5 @@ app.include_router(integrations.router)
 app.include_router(webhooks.router)
 app.include_router(work.router)
 app.include_router(tokens.router)
+app.include_router(approvals.router)
+app.include_router(admin.router)

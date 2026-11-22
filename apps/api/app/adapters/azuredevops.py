@@ -113,10 +113,18 @@ class AzureDevOpsAdapter:
         resp.raise_for_status()
         return str(resp.json()["pullRequestId"])
 
-    def merge_pr(self, pr_id: str) -> None:
+    def get_head_sha(self, pr_id: str) -> str:
         pr = self._client.get(f"/git/repositories/{self.repo}/pullrequests/{pr_id}?api-version={API_VERSION}")
         pr.raise_for_status()
-        commit = pr.json()["lastMergeSourceCommit"]["commitId"]
+        return pr.json()["lastMergeSourceCommit"]["commitId"]
+
+    def mark_ready(self, pr_id: str) -> None:
+        raise NotImplementedError("AzureDevOps mark_ready: pendiente de organización real")
+
+    def merge_pr(self, pr_id: str, sha: str) -> None:
+        commit = self.get_head_sha(pr_id)
+        if commit != sha:
+            raise ValueError(f"el PR cambió: head {commit} != {sha}")
         resp = self._client.patch(
             f"/git/repositories/{self.repo}/pullrequests/{pr_id}?api-version={API_VERSION}",
             json={"status": "completed", "lastMergeSourceCommit": {"commitId": commit}},

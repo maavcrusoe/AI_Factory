@@ -13,6 +13,9 @@ class FakeGitHub:
         self.comments: list[tuple[int, str]] = []
         self.label_writes: list[tuple[int, list[str]]] = []
         self.requests: list[httpx.Request] = []
+        # Fase 5: PRs para el controlador de merge (draft, head y merges).
+        self.pulls: dict[int, dict] = {}
+        self.merges: list[tuple[int, str | None]] = []
 
     def add_issue(self, number: int, title: str, labels: list[str], body: str = "") -> None:
         self.issues[number] = {"number": number, "title": title, "body": body, "labels": labels, "state": "open"}
@@ -33,9 +36,41 @@ class FakeGitHub:
         view["html_url"] = f"https://github.com/maavcrusoe/meme-demo/issues/{issue['number']}"
         return view
 
+    def add_pull(self, number: int, head_sha: str, draft: bool = False) -> None:
+        self.pulls[number] = {"number": number, "node_id": f"PR_{number}", "draft": draft, "head": {"sha": head_sha}}
+
+    def move_head(self, number: int, head_sha: str) -> None:
+        """Simula un push que cambia el head después del gate."""
+        self.pulls[number]["head"]["sha"] = head_sha
+
+    def _pull_handler(self, request: httpx.Request, parts: list[str]) -> httpx.Response:
+        if request.url.path == "/graphql":
+            node = json.loads(request.content)["variables"]["id"]
+            for pull in self.pulls.values():
+                if pull["node_id"] == node:
+                    pull["draft"] = False
+            return httpx.Response(200, json={"data": {"markPullRequestReadyForReview": {"pullRequest": {}}}})
+        number = int(parts[4])
+        pull = self.pulls.get(number)
+        if pull is None:
+            return httpx.Response(404, json={"message": "Not Found"})
+        if request.method == "GET" and len(parts) == 5:
+            return httpx.Response(200, json=pull)
+        if request.method == "PUT" and parts[-1] == "merge":
+            sent = json.loads(request.content or b"{}").get("sha")
+            if pull["draft"]:
+                return httpx.Response(405, json={"message": "Pull Request is still a draft"})
+            if sent is not None and sent != pull["head"]["sha"]:
+                return httpx.Response(409, json={"message": "Head branch was modified"})
+            self.merges.append((number, sent))
+            return httpx.Response(200, json={"merged": True})
+        return httpx.Response(404, json={"message": "Not Found"})
+
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
         parts = request.url.path.strip("/").split("/")  # repos/o/r/issues/...
+        if "pulls" in parts or parts == ["graphql"]:
+            return self._pull_handler(request, parts)
         if request.method == "GET" and parts[-1] == "issues":
             wanted = request.url.params.get("labels")
             found = [
