@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { THEMES, THEME_COOKIE, type ThemeId } from "@/themes/registry";
+import { useSyncExternalStore } from "react";
+import { THEMES, THEME_COOKIE, isThemeId, type ThemeId } from "@/themes/registry";
 
-/** Selector de tema (radiogroup nativo: flechas de teclado incluidas). Cambia <html data-theme> al instante y persiste en cookie + localStorage. */
+/** Aplica y persiste la elección: <html data-theme> al instante, cookie (SSR sin parpadeo) y localStorage (respaldo). */
+function applyTheme(id: ThemeId) {
+  document.documentElement.dataset.theme = id;
+  document.cookie = `${THEME_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
+  try {
+    localStorage.setItem(THEME_COOKIE, id);
+  } catch {}
+}
+
+function subscribe(cb: () => void) {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => mo.disconnect();
+}
+
+/** Selector de tema (radiogroup nativo: flechas de teclado incluidas). El estado vive en <html data-theme>. */
 export function ThemeToggle({ initial }: { initial: ThemeId }) {
-  const [theme, setTheme] = useState<ThemeId>(initial);
-
-  function choose(id: ThemeId) {
-    setTheme(id);
-    document.documentElement.dataset.theme = id;
-    document.cookie = `${THEME_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
-    try {
-      localStorage.setItem(THEME_COOKIE, id);
-    } catch {}
-  }
+  const attr = useSyncExternalStore(
+    subscribe,
+    () => document.documentElement.dataset.theme,
+    () => initial,
+  );
+  const theme = isThemeId(attr) ? attr : initial;
 
   return (
     <fieldset className="theme-toggle" data-testid="theme-toggle">
@@ -27,7 +38,9 @@ export function ThemeToggle({ initial }: { initial: ThemeId }) {
               name="theme"
               value={t.id}
               checked={theme === t.id}
-              onChange={() => choose(t.id)}
+              onChange={() => {
+                applyTheme(t.id);
+              }}
             />
             <span>{t.label}</span>
           </label>
@@ -36,4 +49,3 @@ export function ThemeToggle({ initial }: { initial: ThemeId }) {
     </fieldset>
   );
 }
-
