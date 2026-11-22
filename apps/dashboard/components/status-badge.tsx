@@ -2,6 +2,8 @@ import { STATUS_LABEL } from "@/lib/api";
 
 const TONE: Record<string, string> = {
   QUEUED: "bg-green-100 text-green-800",
+  CLAIMED: "bg-sky-100 text-sky-900",
+  PR_OPEN: "bg-violet-100 text-violet-900",
   WAITING_HUMAN_TRIAGE: "bg-amber-100 text-amber-900",
   NEEDS_INFO: "bg-sky-100 text-sky-900",
   REJECTED: "bg-red-100 text-red-800",

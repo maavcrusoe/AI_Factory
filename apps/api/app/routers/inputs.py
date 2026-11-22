@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, get_db
-from app.models import User, WorkItem, WorkItemEvent
+from app.models import TrackerLink, User, WorkItem, WorkItemEvent
 from app.routers.auth import current_user
 from app.services.ingest import ingest
 from app.services.intake import apply_manual_decision, run_intake
@@ -81,13 +81,21 @@ class WorkItemDetail(WorkItemOut):
     heartbeat_state: str | None
     heartbeat_message: str | None
     events: list[EventOut]
+    tracker: dict[str, Any] | None = None
 
 
 def _detail(db: Session, item: WorkItem) -> WorkItemDetail:
     events = db.scalars(
         select(WorkItemEvent).where(WorkItemEvent.work_item_id == item.id).order_by(WorkItemEvent.id)
     ).all()
+    link = db.scalar(select(TrackerLink).where(TrackerLink.work_item_id == item.id))
+    tracker = (
+        {"provider": link.provider, "remote_id": link.remote_id, "remote_url": link.remote_url}
+        if link is not None
+        else None
+    )
     return WorkItemDetail(
+        tracker=tracker,
         **WorkItemOut.model_validate(item).model_dump(),
         body=item.body,
         expanded_body=item.expanded_body,

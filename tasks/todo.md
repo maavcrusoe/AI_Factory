@@ -28,6 +28,16 @@
 - [x] Ingesta por sondeo idempotente hacia el intake de Fase 1. Verify: test de doble sondeo.
 - [x] Migración `0003_integraciones_tracker`. Verify: upgrade, downgrade, upgrade, `alembic check`.
 
+## Fase 4: pipeline del cliente
+- [x] Agentes `planner`, `builder`, `code-reviewer`, `test-reviewer` en `.claude/agents/`. Verify: ejecución real en meme-demo (ver PR E2E).
+- [x] Gate determinista (`gate.py`) con registro por ronda y reglas de rondas (`rounds.py`). Verify: `python -m unittest discover -s .claude/skills/factory/scripts` (25 tests).
+- [x] Migración `0005_work_artifacts` + subida de logs/diffs por etapa (idempotente por `client_key`). Verify: upgrade, downgrade, upgrade, `alembic check`, tests de hub.
+- [x] Endpoints `complete` (PR_OPEN, fuera de la caducidad), `tracker-link` y artefactos. Verify: `pytest` en `apps/api`.
+- [x] PR en borrador con `Closes #N` vía `gh` local (`pr.py`, solo `factory/*`). Verify: PR E2E en meme-demo.
+- [x] Reanudar tras corte desde `state.json`, outbox de subidas y latido al reanudar (409 = paro). Verify: test de reanudación y de claim perdido.
+- [x] Dashboard: etapas, logs y diffs en el detalle. Verify: Playwright (ver PR).
+- [ ] Revisar PR de AI Factory y de meme-demo tras CI/revisiones.
+
 ## Fases 3 a 7
 Ver tareas en `specs/04` a `specs/08`. Se desglosan al terminar la fase anterior.
 

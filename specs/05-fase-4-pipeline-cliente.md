@@ -18,11 +18,16 @@ Fallo de gate vuelve al builder (máx 3 rondas). Fallo de spec vuelve al planner
 3. El dashboard muestra cada etapa, logs y diff.
 4. Un corte de red no pierde estado local; se reanuda.
 
+## Decisiones de implementación
+Ver `specs/decisiones/010-fase-4-pipeline-cliente.md`. Resumen: orquestador Python con `claude -p --agent` por etapa, tabla `work_artifacts`, endpoint `complete` que pasa a `PR_OPEN`, PR en borrador con `gh` local (sin token en el hub).
+
 ## Tareas
-- [ ] Agentes planner/builder/reviewer. Verify: ejecución en meme-demo.
-- [ ] Script gate y registro de rondas. Verify: gate rojo/verde.
-- [ ] Subida de logs/diffs. Verify: visible en dashboard.
-- [ ] Apertura de PR vía adapter. Verify: PR draft creada.
+- [ ] Agentes planner/builder/code-reviewer/test-reviewer. Verify: ejecución en meme-demo.
+- [ ] Script gate y registro de rondas (round-N). Verify: tests de gate y rondas, gate rojo/verde.
+- [ ] Subida de logs/diffs al hub. Verify: visible en dashboard.
+- [ ] Apertura de PR en borrador con `Closes`. Verify: PR draft creada en meme-demo.
+- [ ] Reanudar tras corte desde estado local. Verify: test de reanudación sin segundo claim.
 
 ## Preguntas abiertas
-- Cuántos reviewers (code/test) al inicio.
+- Revisores al inicio: `code-reviewer` y `test-reviewer` (resuelto, ver decisión 010).
+- Apertura del PR por el hub con token guardado: no se hace (no se almacenan tokens). Queda como punto abierto para Fase 5.

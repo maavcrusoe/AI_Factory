@@ -22,3 +22,4 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-21: Fase 2 en rama factory/fase-2: GitHubAdapter (sondeo 60 s, probado contra meme-demo), AzureDevOpsAdapter con mocks REST (sin org real, pendiente), sincronización de etiquetas con hub ganando, tokens cifrados con Fernet (TOKEN_ENCRYPTION_KEY). Ver specs/decisiones/008.
 - 2026-11-21: Azure DevOps queda para después: no hay org/proyecto aún. Sin pruebas reales; prioridad GitHub y sincronización (aviso del owner).
 - 2026-11-21: Fase 3 en rama factory/fase-3: claim/heartbeat/release/eventos con FOR UPDATE, caducidad 30 min con reloj inyectable, tokens fct_ hasheados, skill /factory. Ver specs/decisiones/009.
+- 2026-11-21: Fase 4 en rama factory/fase-4: pipeline cliente en .claude/skills/factory/scripts (claude -p por etapa, gate, rondas máx. 3, PR borrador con gh, complete -> PR_OPEN, tabla work_artifacts 0005). Hub local puerto 8010 (8000 ocupado). Ver specs/decisiones/010.

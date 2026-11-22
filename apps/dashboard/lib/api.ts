@@ -39,11 +39,23 @@ export type WorkItemDetail = WorkItem & {
   events: WorkEvent[];
 };
 
+export type WorkArtifact = {
+  id: number;
+  stage: string;
+  round: number;
+  kind: string;
+  client_key: string;
+  content: string;
+  created_at: string;
+};
+
 export const STATUS_LABEL: Record<string, string> = {
   RECEIVED: "Recibida",
   NORMALIZING: "Normalizando",
   TRIAGE: "En triage",
   QUEUED: "En cola",
+  CLAIMED: "En curso",
+  PR_OPEN: "PR en borrador",
   NEEDS_INFO: "Falta información",
   WAITING_HUMAN_TRIAGE: "Revisión humana",
   REJECTED: "Rechazada",

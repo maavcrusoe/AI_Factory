@@ -1,3 +1,4 @@
+from app.models.artifact import WorkArtifact
 from app.models.base import Base
 from app.models.integration import ProjectIntegration, TrackerLink
 from app.models.project import Project
@@ -12,6 +13,7 @@ __all__ = [
     "Project",
     "TrackerLink",
     "User",
+    "WorkArtifact",
     "WorkItem",
     "WorkItemEvent",
 ]
