@@ -118,6 +118,18 @@ def test_artifact_upload_is_idempotent_by_client_key(db):
     assert len(pipeline.list_artifacts(db, item.id)) == 1
 
 
+def test_owner_can_upload_final_report_after_pr_open(db):
+    item = _claimed_item(db)
+    pipeline.complete(db, item.id, DEV1, PR_URL, 7)
+    artifact, created = pipeline.add_artifact(
+        db, item.id, DEV1, stage="report", round_no=2, kind="report", client_key="report-2", content="informe"
+    )
+    assert created and artifact.kind == "report"
+    with pytest.raises(HTTPException) as exc:
+        pipeline.add_artifact(db, item.id, DEV2, stage="report", round_no=2, kind="report", client_key="x", content="y")
+    assert exc.value.status_code == 409
+
+
 def test_artifact_refused_for_non_owner_bad_kind_and_too_big(db):
     item = _claimed_item(db)
     with pytest.raises(HTTPException) as exc:

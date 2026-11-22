@@ -262,10 +262,14 @@ class Pipeline:
             try:
                 self.hub.heartbeat(state["itemId"], "resuming", f"reanudando {state['phase']}")
             except HubError as exc:
-                if exc.status == 409:
-                    print(f"#{state['itemId']}: ya no tienes este trabajo; no reanudo")
+                if exc.status != 409:
+                    raise
+                if self.hub.item(state["itemId"])["status"] == "PR_OPEN":
+                    # El PR ya está en el hub; solo falta el cierre (la etapa complete es idempotente).
+                    print(f"#{state['itemId']}: ya tiene PR en el hub; solo falta el cierre")
+                    state["phase"] = "complete"
+                elif not self._reclaim(state):
                     return 1
-                raise
             self.hub.flush_outbox()
         if state["phase"] in ("done", "released"):
             print(f"#{state['itemId']}: ya terminado ({state['phase']})")
@@ -275,6 +279,17 @@ class Pipeline:
             return self._drive(state, hb)
         finally:
             hb.stop()
+
+    def _reclaim(self, state: dict[str, Any]) -> bool:
+        """El claim caducó (proceso parado mucho tiempo): el item vuelve a QUEUED sin dueño.
+        Si sigue libre lo reclamamos y continuamos con el estado local; si otro lo tiene, paramos."""
+        try:
+            self.hub.claim(state["itemId"])
+        except HubError:
+            print(f"#{state['itemId']}: otro dev tiene este trabajo; no reanudo")
+            return False
+        print(f"#{state['itemId']}: claim caducado; reclamado de nuevo para reanudar {state['phase']}")
+        return True
 
     def _claim_new(self, item_id: int | None) -> dict[str, Any] | None:
         if item_id is None:
@@ -479,19 +494,20 @@ class Pipeline:
         state["phase"] = "complete"
 
     def _do_complete(self, state: dict[str, Any]) -> None:
-        try:
-            self.hub.complete(state["itemId"], state["prUrl"], state["prNumber"])
-        except HubError as exc:
-            # Si un corte pasó después de que el hub aceptara el complete, ya está hecho.
-            if exc.status != 409 or self.hub.item(state["itemId"])["status"] != "PR_OPEN":
-                raise
         report = (
             f"Petición #{state['itemId']}: {state['title']}\n"
             f"PR en borrador: {state['prUrl']}\n"
             f"Rama: {state['branch']}. Rondas de builder: {state['round']}. Planificaciones: {state['planRuns'] + 1}.\n"
             "Gate verde, revisores aprobados. El cliente no hace merge."
         )
+        # El informe va antes de complete: los artefactos solo los acepta el dueño con el item en CLAIMED.
         self._upload(state, "report", state["round"], "report", report)
+        try:
+            self.hub.complete(state["itemId"], state["prUrl"], state["prNumber"])
+        except HubError as exc:
+            # Si un corte pasó después de que el hub aceptara el complete, ya está hecho.
+            if exc.status != 409 or self.hub.item(state["itemId"])["status"] != "PR_OPEN":
+                raise
         print(report)
         state["phase"] = "done"
 

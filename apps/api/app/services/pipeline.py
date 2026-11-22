@@ -78,7 +78,9 @@ def add_artifact(
     if len(content) > MAX_ARTIFACT_CHARS:
         raise HTTPException(status_code=422, detail=f"content supera {MAX_ARTIFACT_CHARS} caracteres")
     item = _locked(db, item_id)
-    _require_owner(item, user_email)
+    # El dueño puede subir artefactos mientras trabaja y también después del PR (informe final).
+    if item.status not in (CLAIMED, PR_OPEN) or item.owner != user_email:
+        raise HTTPException(status_code=409, detail=f"No tienes este trabajo (estado {item.status})")
     existing = db.scalar(
         select(WorkArtifact).where(
             WorkArtifact.work_item_id == item.id, WorkArtifact.client_key == client_key

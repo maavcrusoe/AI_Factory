@@ -35,6 +35,8 @@ class FakeTransport:
         self.calls: list[tuple[str, str, dict | None]] = []
         self.network_failures = 0  # subidas que fallan por red antes de volver
         self.heartbeat_status: int | None = None  # p. ej. 409 para simular claim perdido
+        self.claim_status: int | None = None  # 409 = el item lo tiene otro dev
+        self.item_status = "QUEUED"  # estado que devuelve GET /inputs/{id}
         self.lost_claim_on_heartbeat = False
 
     def __call__(self, method: str, path: str, body: dict | None = None):
@@ -42,6 +44,8 @@ class FakeTransport:
         if method == "GET" and path.endswith("/queue"):
             return [{"id": self.item_id}]
         if method == "POST" and path.endswith("/claim"):
+            if self.claim_status:
+                raise HubError(self.claim_status, "ya cogido por otro")
             return {
                 "id": self.item_id,
                 "title": "Añade un botón de limpiar",
@@ -55,8 +59,8 @@ class FakeTransport:
             raise urllib.error.URLError("corte de red simulado")
         if path.endswith("/complete") and body is not None:
             return {"status": "PR_OPEN"}
-        if path.endswith("/item") or path.startswith("/api/v1/inputs/"):
-            return {"status": "PR_OPEN"}
+        if method == "GET" and path.startswith("/api/v1/inputs/"):
+            return {"status": self.item_status}
         return {}
 
     def paths(self, suffix: str) -> list[dict | None]:
@@ -276,10 +280,30 @@ class PipelineFlowTest(unittest.TestCase):
         first.run(1)
 
         transport.heartbeat_status = 409
+        transport.claim_status = 409  # otro dev ya lo tiene
         runner = ScriptedRunner({"planner": planner})
         code = self._pipeline(transport, runner).run(1)
         self.assertEqual(code, 1)
         self.assertEqual(runner.calls, [])
+
+    def test_expired_claim_is_reclaimed_on_resume_when_item_is_free(self):
+        transport = FakeTransport()
+
+        def crash(*_args):
+            raise RuntimeError("proceso caído a mitad de builder")
+
+        self._pipeline(transport, ScriptedRunner(
+            {"planner": planner, "builder": crash, "code-reviewer": approve, "test-reviewer": approve}
+        )).run(1)
+
+        transport.heartbeat_status = 409  # caducó mientras estaba parado
+        runner = ScriptedRunner(
+            {"planner": planner, "builder": builder_fixes_on(1), "code-reviewer": approve, "test-reviewer": approve}
+        )
+        code = self._pipeline(transport, runner).run(1)
+        self.assertEqual(code, 0)
+        self.assertEqual(runner.calls.count("planner"), 0)  # reanuda en build, no replanifica
+        self.assertEqual(len(self.published), 1)
 
 
 class AgentFilesTest(unittest.TestCase):
