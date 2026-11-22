@@ -28,3 +28,8 @@ export async function loginAction(formData: FormData): Promise<void> {
   });
   redirect("/status");
 }
+
+export async function logoutAction(): Promise<void> {
+  (await cookies()).delete(SESSION_COOKIE);
+  redirect("/login");
+}

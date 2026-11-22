@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LiveRefresh } from "@/components/live-refresh";
-import { SiteNav } from "@/components/site-nav";
 import { fetchJson, type Me, type UserRow } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 import { createUserAction, updateUserAction } from "../actions";
@@ -40,7 +39,6 @@ export default async function AdminUsersPage({
     <main className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Usuarios y roles</h1>
-      <SiteNav isAdmin />
 
       {saved ? (
         <p role="status" className="mb-4 rounded bg-green-50 p-3 text-sm text-green-900">

@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { HeartbeatAge } from "@/components/heartbeat-age";
 import { LiveRefresh } from "@/components/live-refresh";
-import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
 import {
   BOARD_COLUMNS,
@@ -46,7 +45,6 @@ export default async function BoardPage({ searchParams }: { searchParams: Promis
     <main className="mx-auto w-full max-w-7xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Tablero</h1>
-      <SiteNav isAdmin={me.role === "admin"} />
 
       <form method="get" aria-label="Filtros" className="mb-6 grid gap-3 rounded border p-4 sm:grid-cols-2 lg:grid-cols-5">
         <label className="grid gap-1 text-sm">

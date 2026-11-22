@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { ArtifactView } from "@/components/artifact-view";
 import { HeartbeatAge } from "@/components/heartbeat-age";
 import { LiveRefresh } from "@/components/live-refresh";
-import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
 import {
   apiFetch,
@@ -45,7 +44,6 @@ export default async function WorkPage({
   return (
     <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
-      <SiteNav isAdmin={me?.role === "admin"} />
 
       <header className="mt-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">

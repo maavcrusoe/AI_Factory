@@ -2,7 +2,6 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { LiveRefresh } from "@/components/live-refresh";
-import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
 import { fetchJson, type Me, type ProjectSummary, STATUS_LABEL } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
@@ -24,7 +23,6 @@ export default async function ProjectsPage() {
     <main className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Proyectos</h1>
-      <SiteNav isAdmin={me.role === "admin"} />
 
       {projects.length === 0 ? <p className="text-neutral-600">No hay proyectos todavía.</p> : null}
       <ul data-testid="projects" className="grid gap-3">
