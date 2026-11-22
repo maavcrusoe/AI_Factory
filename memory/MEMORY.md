@@ -31,3 +31,4 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-21: Ollama qwen3.5:4b accesible; requiere think:false (sin él >2min). Fase 0 mergeada (PR #1). Fase 1 en curso (item 2).
 - 2026-11-21: Azure DevOps real pospuesto (sin org de pruebas); solo mocks en Fase 2.
 - 2026-11-22: Fases 0-7 mergeadas a main (PRs #1-#8). Pendientes: Azure DevOps real, servidor de despliegue, merge real en meme-demo (PR draft #6 abierto), CI ya existe.
+- 2026-11-22: Demo de memes (decisión 016): política v1 de meme-demo con `.factory/*` (no `**`, el spec va en cada PR); item #7 auto-mergeado (PR #8), #3 (PR #9) en WAITING_HUMAN_MERGE sin aprobar, #1 (PR #7) humano por checks.sh. Hub local 5440/8140/3140, receta en docs/demo-memes.md.
