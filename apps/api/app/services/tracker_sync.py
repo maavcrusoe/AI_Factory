@@ -16,7 +16,7 @@ from app.adapters.base import TrackerAdapter
 from app.models import Project, ProjectIntegration, TrackerLink, WorkItem
 from app.services.crypto import decrypt_token
 from app.services.ingest import ingest
-from app.services.intake import record
+from app.services.intake import REJECTED, record
 
 TAKEN_PREFIX = "taken by "
 HUB_MARKER = "<!-- factory:origin=hub -->"
@@ -31,7 +31,8 @@ def is_managed(label: str, factory_label: str) -> bool:
 
 def desired_managed(item: WorkItem, factory_label: str) -> list[str]:
     taken = sorted(label for label in item.labels if label.startswith(TAKEN_PREFIX))
-    return [factory_label, *taken]
+    # Un item REJECTED pierde la etiqueta de fábrica en el remoto (el hub gana; se revierte un re-añadido manual).
+    return taken if item.status == REJECTED else [factory_label, *taken]
 
 
 def replace_taken_label(item: WorkItem, user: str | None) -> None:

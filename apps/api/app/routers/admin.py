@@ -22,7 +22,7 @@ router = APIRouter(tags=["admin"])
 class UserIn(BaseModel):
     email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=8, max_length=200)
-    role: Literal["admin", "developer", "reviewer"]
+    role: Literal["admin", "developer", "reviewer", "viewer"]
 
 
 class PolicyOut(BaseModel):
@@ -50,7 +50,7 @@ def list_users(_: Admin, db: Session = Depends(get_db)) -> list[User]:
 class UserUpdateIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    role: Literal["admin", "developer", "reviewer"] | None = None
+    role: Literal["admin", "developer", "reviewer", "viewer"] | None = None
     is_active: bool | None = None
 
 

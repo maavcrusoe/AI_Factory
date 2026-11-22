@@ -14,6 +14,7 @@ from app.security import (
     ROLE_ADMIN,
     ROLE_DEVELOPER,
     ROLE_REVIEWER,
+    ROLE_VIEWER,
     create_token,
     read_token,
     verify_password,
@@ -89,3 +90,6 @@ def require_role(*roles: str) -> Callable[..., User]:
 Developer = Annotated[User, Depends(require_role(ROLE_DEVELOPER, ROLE_ADMIN))]
 Reviewer = Annotated[User, Depends(require_role(ROLE_REVIEWER, ROLE_ADMIN))]
 Admin = Annotated[User, Depends(require_role(ROLE_ADMIN))]
+# Todo rol salvo viewer: crear entradas, decidir intake, tokens. viewer solo lee (y /metrics).
+Member = Annotated[User, Depends(require_role(ROLE_ADMIN, ROLE_DEVELOPER, ROLE_REVIEWER))]
+MetricsReader = Annotated[User, Depends(require_role(ROLE_ADMIN, ROLE_VIEWER))]

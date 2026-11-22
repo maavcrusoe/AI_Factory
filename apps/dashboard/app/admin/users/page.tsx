@@ -11,6 +11,7 @@ export const instant = false;
 const ROLE_OPTIONS = [
   { value: "developer", label: "Desarrollador" },
   { value: "reviewer", label: "Revisor" },
+  { value: "viewer", label: "Solo lectura" },
   { value: "admin", label: "Admin" },
 ];
 

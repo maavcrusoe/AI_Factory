@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, get_db
 from app.models import Project, TrackerLink, User, WorkItem, WorkItemEvent
-from app.routers.auth import current_user
+from app.routers.auth import Member, current_user
 from app.services.ingest import ingest
 from app.services.intake import apply_manual_decision, run_intake
 from app.services.intake_model import IntakeModel
@@ -264,7 +264,7 @@ def create_input(
     response: Response,
     background: BackgroundTasks,
     idempotency_key: Annotated[str, Header(alias="X-Idempotency-Key", min_length=1, max_length=200)],
-    user: Annotated[User, Depends(current_user)],
+    user: Member,
     db: Session = Depends(get_db),
     model: IntakeModel = Depends(get_intake_model),
 ) -> WorkItem:
@@ -307,7 +307,7 @@ def get_input(
 def decide(
     item_id: int,
     body: ManualDecisionIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Member,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     item = _get_item(db, item_id)
