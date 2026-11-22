@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 API_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TEST_DB = "postgresql+psycopg://factory:factory@localhost:5432/factory_test"
+DEFAULT_TEST_DB = "postgresql+psycopg://factory:factory@127.0.0.1:5432/factory_test"
 
 # Base de tests separada de la de desarrollo. Se fija antes de importar app.*.
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL", DEFAULT_TEST_DB)
