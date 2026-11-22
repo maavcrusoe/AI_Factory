@@ -10,7 +10,7 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 p-4">
+    <main data-screen="login" className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 p-4">
       <h1 className="text-2xl font-semibold">Entrar a AI Factory</h1>
       <form action={loginAction} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1 text-sm">

@@ -26,7 +26,7 @@ export default async function InboxPage({
   const idempotencyKey = crypto.randomUUID();
 
   return (
-    <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+    <main data-screen="inbox" className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
       <SiteNav isAdmin={me?.role === "admin"} />
       <LiveRefresh />
       <header className="mb-6 flex items-center justify-between">

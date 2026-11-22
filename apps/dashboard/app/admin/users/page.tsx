@@ -37,7 +37,7 @@ export default async function AdminUsersPage({
   const { saved, error } = await searchParams;
 
   return (
-    <main className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
+    <main data-screen="users" className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Usuarios y roles</h1>
       <SiteNav isAdmin />

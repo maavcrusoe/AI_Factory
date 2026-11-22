@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
   if (!me || !projects) redirect("/login");
 
   return (
-    <main className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
+    <main data-screen="projects" className="mx-auto w-full max-w-4xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Proyectos</h1>
       <SiteNav isAdmin={me.role === "admin"} />

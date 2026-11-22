@@ -43,7 +43,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Promis
   if (!me || !settings || !projects || !items) redirect("/login");
 
   return (
-    <main className="mx-auto w-full max-w-7xl gap-6 p-4 sm:p-8">
+    <main data-screen="board" className="mx-auto w-full max-w-7xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Tablero</h1>
       <SiteNav isAdmin={me.role === "admin"} />
