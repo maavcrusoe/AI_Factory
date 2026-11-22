@@ -27,7 +27,13 @@ class GenericAdapter:
     def open_pr(self, head: str, base: str, title: str, body: str) -> str:
         raise NotImplementedError("generic: sin repo")
 
-    def merge_pr(self, pr_id: str) -> None:
+    def get_head_sha(self, pr_id: str) -> str:
+        raise NotImplementedError("generic: sin repo")
+
+    def mark_ready(self, pr_id: str) -> None:
+        raise NotImplementedError("generic: sin repo")
+
+    def merge_pr(self, pr_id: str, sha: str) -> None:
         raise NotImplementedError("generic: sin repo")
 
     def get_diff(self, pr_id: str) -> str:

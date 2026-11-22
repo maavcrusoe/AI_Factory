@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -35,6 +35,20 @@ class WorkItem(Base):
     last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_state: Mapped[str | None] = mapped_column(String(30))
     heartbeat_message: Mapped[str | None] = mapped_column(Text)
+    # PR (Fase 4/5): número y URL del PR en borrador que abrió el cliente.
+    pr_number: Mapped[int | None] = mapped_column(Integer)
+    pr_url: Mapped[str | None] = mapped_column(String(500))
+    # Informe del gate final del cliente para un SHA concreto (Fase 5).
+    gate_sha: Mapped[str | None] = mapped_column(String(40))
+    gate_result: Mapped[str | None] = mapped_column(String(10))
+    meaning_change: Mapped[str | None] = mapped_column(String(10))
+    planned: Mapped[bool | None] = mapped_column(Boolean)
+    touched_paths: Mapped[list[str] | None] = mapped_column(JSON)
+    review_findings: Mapped[list[str] | None] = mapped_column(JSON)
+    # Bloqueo optimista de decisiones: cada informe o decisión la incrementa.
+    approval_version: Mapped[int] = mapped_column(Integer, server_default="0")
+    policy_version: Mapped[int | None] = mapped_column(Integer)
+    policy_reasons: Mapped[list[str] | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

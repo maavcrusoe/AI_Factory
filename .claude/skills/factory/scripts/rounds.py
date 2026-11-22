@@ -13,6 +13,8 @@ MAX_PLAN_RUNS = 1
 
 SPEC_PROBLEM_RE = re.compile(r"^SPEC_PROBLEM:\s*(.+)$", re.MULTILINE)
 VERDICT_RE = re.compile(r"^VERDICT:\s*(APPROVE|REQUEST_CHANGES)\s*$", re.MULTILINE)
+MEANING_RE = re.compile(r"^MEANING:\s*(none|minor|major|dubious)\s*$", re.MULTILINE)
+PLANNED_RE = re.compile(r"^PLANNED:\s*(yes|no)\s*$", re.MULTILINE)
 
 
 @dataclass(frozen=True)
@@ -55,3 +57,14 @@ def parse_verdict(reviewer_output: str) -> bool | None:
     if not matches:
         return None
     return matches[-1] == "APPROVE"
+
+
+def parse_review_facts(reviewer_output: str) -> dict[str, object]:
+    """Significado del texto y planificación según el code-reviewer (Fase 5).
+    Sin línea, lo prudente: significado `dubious` y no planificado. Ambos piden humano en la política."""
+    meanings = MEANING_RE.findall(reviewer_output)
+    planned = PLANNED_RE.findall(reviewer_output)
+    return {
+        "meaning": meanings[-1] if meanings else "dubious",
+        "planned": planned[-1] == "yes" if planned else False,
+    }

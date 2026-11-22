@@ -82,6 +82,18 @@ class WorkItemDetail(WorkItemOut):
     heartbeat_message: str | None
     events: list[EventOut]
     tracker: dict[str, Any] | None = None
+    # Fase 5: PR, informe del gate final y decisión de aprobación.
+    pr_number: int | None = None
+    pr_url: str | None = None
+    gate_sha: str | None = None
+    gate_result: str | None = None
+    meaning_change: str | None = None
+    planned: bool | None = None
+    touched_paths: list[str] | None = None
+    review_findings: list[str] | None = None
+    approval_version: int = 0
+    policy_version: int | None = None
+    policy_reasons: list[str] | None = None
 
 
 def _detail(db: Session, item: WorkItem) -> WorkItemDetail:
@@ -111,6 +123,17 @@ def _detail(db: Session, item: WorkItem) -> WorkItemDetail:
         heartbeat_state=item.heartbeat_state,
         heartbeat_message=item.heartbeat_message,
         events=[EventOut.model_validate(e) for e in events],
+        pr_number=item.pr_number,
+        pr_url=item.pr_url,
+        gate_sha=item.gate_sha,
+        gate_result=item.gate_result,
+        meaning_change=item.meaning_change,
+        planned=item.planned,
+        touched_paths=item.touched_paths,
+        review_findings=item.review_findings,
+        approval_version=item.approval_version,
+        policy_version=item.policy_version,
+        policy_reasons=item.policy_reasons,
     )
 
 

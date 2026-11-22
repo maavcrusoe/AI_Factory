@@ -18,10 +18,10 @@ Valor inicial recomendado: todo merge requiere humano y se relaja con datos.
 5. Auditoría de cada decisión.
 
 ## Tareas
-- [ ] Modelo de política + motor de evaluación. Verify: tests por regla.
-- [ ] Roles y permisos. Verify: tests de auth.
-- [ ] Pantalla de aprobaciones. Verify: Playwright.
-- [ ] Merge controlado vía adapter. Verify: merge en meme-demo.
+- [x] Modelo de política + motor de evaluación. Verify: tests por regla.
+- [x] Roles y permisos. Verify: tests de auth.
+- [x] Pantalla de aprobaciones. Verify: Playwright.
+- [x] Merge controlado vía adapter. Verify: transporte falso; merge en meme-demo NO ejecutado (prohibido por la brief).
 
 ## Preguntas abiertas
 - Lista inicial de paths sensibles por proyecto.

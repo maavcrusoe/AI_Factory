@@ -76,8 +76,34 @@ class GitHubAdapter:
         resp.raise_for_status()
         return str(resp.json()["number"])
 
-    def merge_pr(self, pr_id: str) -> None:
-        resp = self._client.put(self._path(f"/pulls/{pr_id}/merge"))
+    def _pull(self, pr_id: str) -> dict:
+        resp = self._client.get(self._path(f"/pulls/{pr_id}"))
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_head_sha(self, pr_id: str) -> str:
+        return self._pull(pr_id)["head"]["sha"]
+
+    def mark_ready(self, pr_id: str) -> None:
+        # La API REST no cambia el estado de borrador: hace falta la mutación GraphQL.
+        pull = self._pull(pr_id)
+        if not pull.get("draft"):
+            return
+        resp = self._client.post(
+            "/graphql",
+            json={
+                "query": "mutation($id: ID!) { markPullRequestReadyForReview(input: {pullRequestId: $id}) "
+                "{ pullRequest { isDraft } } }",
+                "variables": {"id": pull["node_id"]},
+            },
+        )
+        resp.raise_for_status()
+        if resp.json().get("errors"):
+            raise ValueError("GitHub no quitó el borrador del PR")
+
+    def merge_pr(self, pr_id: str, sha: str) -> None:
+        # `sha` hace que GitHub rechace el merge si el head ha cambiado desde la comprobación del gate.
+        resp = self._client.put(self._path(f"/pulls/{pr_id}/merge"), json={"sha": sha})
         resp.raise_for_status()
 
     def get_diff(self, pr_id: str) -> str:

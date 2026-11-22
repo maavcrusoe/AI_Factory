@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import User, WorkItem
-from app.routers.auth import current_user
+from app.routers.auth import Developer, current_user
 from app.routers.inputs import WorkItemDetail, WorkItemOut, _detail, _get_item
-from app.services import claims, pipeline
+from app.services import approvals, claims, pipeline
 from app.services.intake import QUEUED
 from app.services.rules import find_project
 
@@ -75,7 +75,7 @@ def queue(
 @router.post("/api/v1/work/{item_id}/claim", response_model=WorkItemDetail)
 def claim(
     item_id: int,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     return _detail(db, claims.claim(db, item_id, user.email))
@@ -85,7 +85,7 @@ def claim(
 def heartbeat(
     item_id: int,
     body: HeartbeatIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     return _detail(db, claims.heartbeat(db, item_id, user.email, body.state, body.message))
@@ -95,7 +95,7 @@ def heartbeat(
 def release(
     item_id: int,
     body: ReleaseIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     return _detail(db, claims.release(db, item_id, user.email, body.reason))
@@ -105,17 +105,28 @@ def release(
 def complete(
     item_id: int,
     body: CompleteIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     return _detail(db, pipeline.complete(db, item_id, user.email, body.pr_url, body.pr_number))
+
+
+@router.post("/api/v1/work/{item_id}/gate-report", response_model=WorkItemDetail)
+def gate_report(
+    item_id: int,
+    body: approvals.GateReport,
+    user: Developer,
+    db: Session = Depends(get_db),
+) -> WorkItemDetail:
+    """Informe del gate final del cliente para un SHA. Decide la política: humano o listo para mergear."""
+    return _detail(db, approvals.report_gate(db, item_id, user.email, body))
 
 
 @router.post("/api/v1/work/{item_id}/tracker-link", response_model=WorkItemDetail)
 def tracker_link(
     item_id: int,
     body: TrackerLinkIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> WorkItemDetail:
     pipeline.link_tracker(db, item_id, user.email, body.provider, body.remote_id, body.remote_url)
@@ -126,7 +137,7 @@ def tracker_link(
 def add_artifact(
     item_id: int,
     body: ArtifactIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     artifact, created = pipeline.add_artifact(
@@ -156,7 +167,7 @@ def list_artifacts(
 def add_event(
     item_id: int,
     body: EventIn,
-    user: Annotated[User, Depends(current_user)],
+    user: Developer,
     db: Session = Depends(get_db),
 ) -> dict[str, int]:
     if body.detail is not None and len(json.dumps(body.detail)) > MAX_DETAIL_CHARS:

@@ -51,6 +51,15 @@ def _require_owner(item: WorkItem, user_email: str) -> None:
         raise HTTPException(status_code=409, detail=f"No tienes este trabajo (estado {item.status})")
 
 
+def check_version(item: WorkItem, expected_version: int) -> None:
+    """Bloqueo optimista: la decisión sobre una versión vieja del item se rechaza (Fase 5)."""
+    if item.approval_version != expected_version:
+        raise HTTPException(
+            status_code=409,
+            detail=f"El item cambió (versión {item.approval_version}, esperada {expected_version}): recarga antes de decidir",
+        )
+
+
 def _unassign(item: WorkItem) -> None:
     item.owner = None
     item.claimed_at = None

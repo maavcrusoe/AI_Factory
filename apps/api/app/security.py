@@ -60,6 +60,11 @@ def read_token(token: str, secret: str) -> str | None:
     return body.get("sub")
 
 
+ROLE_ADMIN = "admin"
+ROLE_DEVELOPER = "developer"
+ROLE_REVIEWER = "reviewer"
+ROLES = (ROLE_ADMIN, ROLE_DEVELOPER, ROLE_REVIEWER)
+
 API_TOKEN_PREFIX = "fct_"
 
 

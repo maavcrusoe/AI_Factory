@@ -25,6 +25,8 @@ def complete(db: Session, item_id: int, user_email: str, pr_url: str, pr_number:
     item = _locked(db, item_id)
     _require_owner(item, user_email)
     item.status = PR_OPEN
+    item.pr_url = pr_url
+    item.pr_number = pr_number
     item.reason = f"PR en borrador: {pr_url}"
     replace_taken_label(item, None)
     record(db, item, "pr_opened", PR_OPEN, user_email, {"pr_url": pr_url, "pr_number": pr_number})

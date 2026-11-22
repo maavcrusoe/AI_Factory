@@ -450,6 +450,7 @@ class Pipeline:
             "'VERDICT: APPROVE' o 'VERDICT: REQUEST_CHANGES'."
         )
         reviews: list[str] = []
+        notes: dict[str, str] = {}
         all_approved = True
         for reviewer, stage in (("code-reviewer", "review-code"), ("test-reviewer", "review-test")):
             log = self._runs(item_id) / f"round-{round_no}" / f"{stage}.log"
@@ -457,9 +458,14 @@ class Pipeline:
             approved = rounds.parse_verdict(output) is True
             self._upload(state, stage, round_no, "log", log.read_text(encoding="utf-8"))
             self._stage_event(state, stage, "aprobado" if approved else "cambios pedidos")
+            if reviewer == "code-reviewer":
+                # Significado y planificación para la política de merge (Fase 5). La última ronda gana.
+                state["review_facts"] = rounds.parse_review_facts(output)
+            notes[reviewer] = output[-1000:]
             if not approved:
                 all_approved = False
                 reviews.append(f"[{reviewer}]\n{output[-3000:]}")
+        state["review_notes"] = [f"[{name}]\n{text}" for name, text in notes.items()]
         state["feedback"] = "\n\n".join(reviews)
         self._apply(state, rounds.after_review(round_no, all_approved))
 
@@ -508,8 +514,28 @@ class Pipeline:
             # Si un corte pasó después de que el hub aceptara el complete, ya está hecho.
             if exc.status != 409 or self.hub.item(state["itemId"])["status"] != "PR_OPEN":
                 raise
+        self._report_final_gate(state)
         print(report)
         state["phase"] = "done"
+
+    def _report_final_gate(self, state: dict[str, Any]) -> None:
+        """Gate final sobre el HEAD que está en el PR. El hub compara ese SHA al mergear (Fase 5)."""
+        worktree = Path(state["worktree"])
+        item_id = state["itemId"]
+        sha = git(worktree, "rev-parse", "HEAD").strip()
+        result = gate_mod.run_gate(worktree, self._runs(item_id) / "final-gate.log", state["round"])
+        self._upload(state, "final-gate", state["round"], "log", result.output)
+        touched = [p for p in git(worktree, "diff", "--name-only", "origin/main...HEAD").splitlines() if p.strip()]
+        facts = state.get("review_facts") or {}
+        self.hub.gate_report(
+            item_id,
+            sha=sha,
+            passed=result.passed,
+            meaning=facts.get("meaning", "dubious"),
+            planned=bool(facts.get("planned", False)),
+            touched_paths=touched,
+            review_findings=state.get("review_notes", []),
+        )
 
     def _release(self, state: dict[str, Any], reason: str) -> int:
         item_id = state["itemId"]

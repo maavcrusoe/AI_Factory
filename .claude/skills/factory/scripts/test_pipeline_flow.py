@@ -158,6 +158,12 @@ class PipelineFlowTest(unittest.TestCase):
         self.assertIn("Closes #5", self.published[0][1])
         complete = transport.paths("/complete")
         self.assertEqual(complete[-1], {"pr_url": PR_URL, "pr_number": 9})
+        # Gate final sobre el HEAD del PR; sin líneas MEANING/PLANNED del revisor, lo prudente (humano).
+        report = transport.paths("/gate-report")[-1]
+        self.assertEqual(report["result"], "passed")
+        self.assertEqual((report["meaning_change"], report["planned"]), ("dubious", False))
+        self.assertEqual(len(report["sha"]), 40)
+        self.assertIn("ok.flag", report["touched_paths"])
         gate_uploads = [b for b in transport.paths("/artifacts") if b and b["stage"] == "gate"]
         self.assertEqual([b["round"] for b in gate_uploads], [1, 2])
         self.assertIn("FAIL", gate_uploads[0]["content"])

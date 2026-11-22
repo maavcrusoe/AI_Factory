@@ -46,7 +46,7 @@ def world():
             db.add(Project(slug=SLUG, name="Fase 3 API"))
         for email in (DEV1, DEV2):
             if db.scalar(select(User).where(User.email == email)) is None:
-                db.add(User(email=email, password_hash=hash_password("pw-test"), role="member"))
+                db.add(User(email=email, password_hash=hash_password("pw-test"), role="developer"))
         db.commit()
         project_id = db.scalar(select(Project.id).where(Project.slug == SLUG))
         db.execute(delete(WorkItemEvent).where(WorkItemEvent.work_item_id.in_(
