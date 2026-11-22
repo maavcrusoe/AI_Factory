@@ -1,12 +1,12 @@
 # Temas de UI del dashboard
 
-El dashboard incluye dos temas, **Claude** (por defecto) y **Codex**, y un selector visible en todas las páginas (también en login), arriba a la derecha.
+El dashboard incluye dos temas, **Claude** y **Codex** (por defecto en esta rama), y un selector visible en todas las páginas (también en login), arriba a la derecha.
 
 ## Cómo funciona el selector
 - Registro único: `apps/dashboard/themes/registry.ts` (`id`, `label`, `description`).
 - Componente: `components/theme-toggle.tsx`, un `radiogroup` con radios nativos (flechas de teclado, foco visible, sin movimiento con `prefers-reduced-motion`). Estilos neutros en `themes/toggle.css`.
 - Al elegir: cambia `<html data-theme>` al instante (sin recarga) y guarda cookie `ai-factory-theme` (1 año) y `localStorage` como respaldo.
-- `app/layout.tsx` lee la cookie en el servidor, así el HTML ya sale con el tema correcto (sin parpadeo). Sin cookie, un script mínimo en `<head>` recupera `localStorage` antes del primer pintado. Por defecto: `claude`.
+- `app/layout.tsx` lee la cookie en el servidor, así el HTML ya sale con el tema correcto (sin parpadeo). Sin cookie, un script mínimo en `<head>` recupera `localStorage` antes del primer pintado. Por defecto en esta rama (`estilo-codex`): `codex` (cookie ausente => Codex). En `main` el único tema es Claude.
 - Los CSS de ambos temas se cargan siempre; no se filtran entre sí porque todo selector va acotado a `[data-theme="<id>"]`.
 
 ## Añadir un tema

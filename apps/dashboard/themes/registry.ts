@@ -9,7 +9,7 @@ export const THEMES = [
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
-export const DEFAULT_THEME: ThemeId = "claude";
+export const DEFAULT_THEME: ThemeId = "codex";
 export const THEME_COOKIE = "ai-factory-theme";
 
 export function isThemeId(value: unknown): value is ThemeId {
