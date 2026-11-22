@@ -63,7 +63,8 @@ def read_token(token: str, secret: str) -> str | None:
 ROLE_ADMIN = "admin"
 ROLE_DEVELOPER = "developer"
 ROLE_REVIEWER = "reviewer"
-ROLES = (ROLE_ADMIN, ROLE_DEVELOPER, ROLE_REVIEWER)
+ROLE_VIEWER = "viewer"
+ROLES = (ROLE_ADMIN, ROLE_DEVELOPER, ROLE_REVIEWER, ROLE_VIEWER)
 
 API_TOKEN_PREFIX = "fct_"
 

@@ -6,7 +6,7 @@ import { API_URL, SESSION_COOKIE } from "@/lib/config";
 
 const DIFFICULTIES = ["low", "medium", "high"];
 const MEANINGS = ["none", "minor", "major", "dubious"];
-const ROLES = ["admin", "developer", "reviewer"];
+const ROLES = ["admin", "developer", "reviewer", "viewer"];
 
 /** Llamada autenticada a la API. Sin sesión o con 401, manda a login. */
 async function callApi(path: string, method: "POST" | "PATCH" | "PUT", body: unknown): Promise<Response> {

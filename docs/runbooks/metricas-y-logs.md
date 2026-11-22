@@ -5,7 +5,7 @@
 Endpoint: `GET /metrics` en la API, formato de texto Prometheus. Se calcula desde PostgreSQL en cada
 petición: los valores sobreviven a reinicios y no dependen de la memoria de un proceso.
 
-**Acceso: solo admin.** Sin cabecera → 401; con un token de developer o reviewer → 403. No exponer la API
+**Acceso: `admin` y `viewer`.** Sin cabecera → 401; con un token de developer o reviewer → 403. El rol `viewer` (solo lectura) es el adecuado para el scrape: lee `/metrics` y las vistas del dashboard, y no puede aprobar, reclamar, crear entradas ni administrar. No exponer la API
 más allá de la red interna sin un proxy que añada filtros.
 
 | Métrica | Tipo | Etiquetas | Significado |
@@ -22,12 +22,12 @@ tasas, usa `rate()` en Prometheus.
 
 ### Configurar el scrape
 
-Crea un usuario admin dedicado para la métrica (no uses tu cuenta personal) y un token:
+Crea un usuario `viewer` dedicado para la métrica (no uses tu cuenta personal ni un admin) y un token:
 
 ```sh
 # Como admin: crear el usuario y su token (el valor fct_... se muestra una sola vez)
 curl -s -X POST http://HUB:8000/api/v1/users -H "Authorization: Bearer $ADMIN" -H 'Content-Type: application/json' \
-  -d '{"email":"metrics@hub.local","password":"<contraseña-larga>","role":"admin"}'
+  -d '{"email":"metrics@hub.local","password":"<contraseña-larga>","role":"viewer"}'
 ```
 
 Luego, con la sesión de ese usuario, `POST /api/v1/tokens` con `{"name":"prometheus"}`.
@@ -46,8 +46,7 @@ scrape_configs:
       - targets: ["HUB:8000"]
 ```
 
-Limitación conocida: el rol `admin` da más permisos de los necesarios para una métrica. Un rol de
-solo lectura para métricas queda como punto abierto.
+Un token de `viewer` solo sirve para leer: si se filtra, no permite aprobar, reclamar ni administrar. Para quitar el acceso, desactiva el usuario o revoca el token.
 
 ### Revisión rápida
 

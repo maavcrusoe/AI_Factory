@@ -274,3 +274,56 @@ def _adapter_for(integ: ProjectIntegration, fake: FakeGitHub):
     from app.adapters.github import GitHubAdapter
 
     return GitHubAdapter(integ.config, "x", transport=httpx.MockTransport(fake.handler))
+
+
+def _reject(db, item, how: str) -> None:
+    from app.services.intake import apply_manual_decision
+
+    if how == "manual":
+        item.status = "WAITING_HUMAN_TRIAGE"
+        db.commit()
+        apply_manual_decision(db, item, "reject", "tester", "fuera de alcance", None)
+    else:  # el intake también deja el item en REJECTED
+        item.status = "REJECTED"
+    db.commit()
+
+
+@pytest.mark.parametrize("how", ["manual", "intake"])
+def test_rejected_item_loses_factory_label_and_manual_readd_is_reverted(db, monkeypatch, how):
+    fake = FakeGitHub()
+    fake.add_issue(1, "Meme", ["factory", "bug"])
+    _github(monkeypatch, fake)
+    integ = _integration(db, "github", {"repo": "maavcrusoe/meme-demo"})
+    poll_integration(db, integ, lambda _: None)
+    item = db.scalar(select(WorkItem).where(WorkItem.idempotency_key == "github:1"))
+    set_taken_by(db, item, "alice", actor="test")
+    adapter = _adapter_for(integ, fake)
+    reconcile_labels(db, integ, adapter)
+    assert sorted(fake.issues[1]["labels"]) == ["bug", "factory", "taken by alice"]
+
+    _reject(db, item, how)
+    assert reconcile_labels(db, integ, adapter) == 1
+    assert sorted(fake.issues[1]["labels"]) == ["bug", "taken by alice"]  # sin factory; lo ajeno se conserva
+    writes = len(fake.label_writes)
+    assert reconcile_labels(db, integ, adapter) == 0  # sin bucle: el segundo ciclo no escribe
+    assert len(fake.label_writes) == writes
+
+    # Alguien re-añade la etiqueta a mano: el hub la revierte y el item sigue REJECTED.
+    fake.issues[1]["labels"] = ["factory", "bug", "taken by alice"]
+    assert reconcile_labels(db, integ, adapter) == 1
+    assert sorted(fake.issues[1]["labels"]) == ["bug", "taken by alice"]
+    assert reconcile_labels(db, integ, adapter) == 0
+    db.refresh(item)
+    assert item.status == "REJECTED"
+    reverted = db.scalar(
+        select(WorkItemEvent).where(WorkItemEvent.work_item_id == item.id, WorkItemEvent.kind == "label_reverted")
+    )
+    assert reverted is not None
+
+    # Re-añadida y sondeo: no se reingesta ni se reabre.
+    fake.issues[1]["labels"] = ["factory", "bug"]
+    poll_integration(db, integ, lambda _: pytest.fail("no debe iniciar intake"))
+    assert _count_items(db) == 1
+    db.refresh(item)
+    assert item.status == "REJECTED"
+    assert sorted(fake.issues[1]["labels"]) == ["bug", "taken by alice"]
