@@ -13,9 +13,9 @@ Proyectos, Kanban por estado, detalle con timeline y logs, aprobaciones, usuario
 4. Verificado con Playwright (screenshots).
 
 ## Tareas
-- [ ] Kanban + detalle con timeline.
-- [ ] Visor de logs/diff.
-- [ ] Pantallas admin. Verify: Playwright.
+- [x] Kanban + detalle con timeline.
+- [x] Visor de logs/diff.
+- [x] Pantallas admin. Verify: Playwright.
 
 ## Preguntas abiertas
-- Retención de logs en Postgres.
+- Retención de logs en Postgres: resuelta en decisiones/012 (`LOG_RETENTION_DAYS`, 30 días, solo logs).

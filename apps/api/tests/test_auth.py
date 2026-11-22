@@ -11,7 +11,7 @@ def test_login_with_admin_returns_token() -> None:
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["user"] == {"id": body["user"]["id"], "email": "admin@test.local", "role": "admin"}
+    assert body["user"] == {"id": body["user"]["id"], "email": "admin@test.local", "role": "admin", "is_active": True}
     assert body["token_type"] == "bearer"
 
 

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -30,6 +31,10 @@ class Settings(BaseSettings):
     heartbeat_timeout_seconds: int = 30 * 60
     # Job de caducidad en segundo plano, independiente del sondeo de trackers. Los tests lo desactivan.
     claim_expiry_enabled: bool = True
+    # Retención de logs (artefactos `log`) en Postgres. Pasados N días, el job los borra.
+    log_retention_days: int = Field(default=30, ge=1, le=3650)
+    # Job de limpieza en segundo plano. Los tests lo desactivan.
+    log_retention_enabled: bool = True
 
 
 @lru_cache

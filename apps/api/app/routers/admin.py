@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.db import get_db
 from app.models import MergePolicy, Project, User
 from app.routers.auth import Admin, UserOut, current_user
@@ -44,6 +45,44 @@ def create_user(body: UserIn, _: Admin, db: Session = Depends(get_db)) -> User:
 @router.get("/api/v1/users", response_model=list[UserOut])
 def list_users(_: Admin, db: Session = Depends(get_db)) -> list[User]:
     return list(db.scalars(select(User).order_by(User.id)).all())
+
+
+class UserUpdateIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["admin", "developer", "reviewer"] | None = None
+    is_active: bool | None = None
+
+
+@router.patch("/api/v1/users/{user_id}", response_model=UserOut)
+def update_user(user_id: int, body: UserUpdateIn, admin: Admin, db: Session = Depends(get_db)) -> User:
+    """Cambia rol o activo. El admin no puede quitarse el rol de admin ni desactivarse a sí mismo."""
+    user = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    new_role = body.role or user.role
+    new_active = user.is_active if body.is_active is None else body.is_active
+    if user.id == admin.id and (new_role != "admin" or not new_active):
+        raise HTTPException(status_code=422, detail="No puedes quitarte el rol de admin ni desactivarte")
+    user.role = new_role
+    user.is_active = new_active
+    db.commit()
+    return user
+
+
+class SettingsOut(BaseModel):
+    log_retention_days: int
+    heartbeat_timeout_seconds: int
+
+
+@router.get("/api/v1/settings", response_model=SettingsOut)
+def platform_settings(_: Annotated[User, Depends(current_user)]) -> SettingsOut:
+    """Valores de solo lectura que el dashboard necesita para mostrar y marcar el estado."""
+    settings = get_settings()
+    return SettingsOut(
+        log_retention_days=settings.log_retention_days,
+        heartbeat_timeout_seconds=settings.heartbeat_timeout_seconds,
+    )
 
 
 @router.get("/api/v1/projects/{slug}/merge-policy", response_model=PolicyOut)
