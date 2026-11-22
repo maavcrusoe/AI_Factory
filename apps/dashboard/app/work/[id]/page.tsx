@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { LiveRefresh } from "@/components/live-refresh";
 import { StatusBadge } from "@/components/status-badge";
-import { apiFetch, DECIDABLE, type WorkItemDetail } from "@/lib/api";
+import { apiFetch, DECIDABLE, type WorkArtifact, type WorkItemDetail } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 import { decideAction } from "./actions";
 
@@ -24,6 +24,9 @@ export default async function WorkPage({
   if (!response || response.status === 401) redirect("/login");
   if (response.status === 404) notFound();
   const item = (await response.json()) as WorkItemDetail;
+  const artifactsResponse = await apiFetch(`/api/v1/work/${id}/artifacts`, token).catch(() => null);
+  const artifacts: WorkArtifact[] = artifactsResponse?.ok ? await artifactsResponse.json() : [];
+  const stages = item.events.filter((e) => ["stage", "pr_opened", "tracker_linked"].includes(e.kind));
   const { error } = await searchParams;
 
   return (
@@ -124,6 +127,35 @@ export default async function WorkPage({
           </div>
         </form>
       ) : null}
+
+      <section className="mb-6 grid gap-2" aria-label="Etapas del pipeline">
+        <h2 className="font-medium">Etapas del pipeline</h2>
+        <ol data-testid="stages" className="grid gap-1 text-sm">
+          {stages.length === 0 ? <li className="text-neutral-500">Sin etapas todavía.</li> : null}
+          {stages.map((event) => (
+            <li key={event.id} className="flex flex-wrap gap-2 border-b py-1">
+              <span className="font-mono text-xs">{String(event.detail?.stage ?? event.kind)}</span>
+              <span>{String(event.detail?.message ?? event.detail?.pr_url ?? "")}</span>
+              <span className="text-neutral-500">{formatDate(event.created_at)}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mb-6 grid gap-2" aria-label="Logs y diffs">
+        <h2 className="font-medium">Logs y diffs</h2>
+        {artifacts.length === 0 ? <p className="text-sm text-neutral-500">Sin artefactos todavía.</p> : null}
+        {artifacts.map((artifact) => (
+          <details key={artifact.id} data-testid="artifact" className="rounded border p-2">
+            <summary className="cursor-pointer text-sm">
+              {artifact.kind} · {artifact.stage} · ronda {artifact.round}
+            </summary>
+            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded bg-neutral-50 p-2 text-xs">
+              {artifact.content}
+            </pre>
+          </details>
+        ))}
+      </section>
 
       <section className="grid gap-2">
         <h2 className="font-medium">Auditoría</h2>
