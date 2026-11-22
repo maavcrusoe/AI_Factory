@@ -1,0 +1,4 @@
+# Los scripts y Dockerfiles se ejecutan en Linux: nunca CRLF, aunque el repo se clone en Windows.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf

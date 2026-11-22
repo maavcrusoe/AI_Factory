@@ -1,19 +1,115 @@
-# PostgreSQL solo para la base de datos. API y dashboard corren en local.
+# Hub de AI Factory: `docker compose up -d --build` levanta base, migraciones, API y dashboard.
+# Configuración en .env (copiar de .env.example, nunca se commitea). Las variables obligatorias fallan si faltan.
+#
+# Red:
+#   backend  interna. Base de datos y migraciones no tienen salida ni puertos publicados.
+#   edge     salida a la red (Ollama, GitHub, Azure DevOps) y publicación de API y dashboard.
+# Puertos: API_BIND/DASHBOARD_BIND valen 127.0.0.1 por defecto; en el servidor pon la IP de la LAN o 0.0.0.0.
+# Desarrollo con API y dashboard en el host: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db`.
+
+x-env-file: &env-file
+  env_file:
+    - path: .env
+      required: false
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-api-env: &api-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?Define POSTGRES_USER en .env}:${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}@db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
+  APP_SECRET_KEY: ${APP_SECRET_KEY:?Define APP_SECRET_KEY en .env}
+  TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:?Define TOKEN_ENCRYPTION_KEY en .env}
+  LOG_FORMAT: json
+
 services:
   db:
     image: postgres:16
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    <<: *env-file
+    logging: *logging
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-factory}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-factory}
-      POSTGRES_DB: ${POSTGRES_DB:-factory}
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-factory}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
-      retries: 10
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  # Paso controlado de migraciones: corre una vez antes de la API y termina. Si falla, la API no arranca.
+  migrate:
+    build: ./apps/api
+    image: ai-factory-api:local
+    restart: "no"
+    <<: *env-file
+    logging: *logging
+    command: ["alembic", "upgrade", "head"]
+    environment: *api-env
+    networks:
+      - backend
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./apps/api
+    image: ai-factory-api:local
+    restart: unless-stopped
+    <<: *env-file
+    logging: *logging
+    environment: *api-env
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8000}:8000"
+    networks:
+      - backend
+      - edge
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  dashboard:
+    build: ./apps/dashboard
+    image: ai-factory-dashboard:local
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "${DASHBOARD_BIND:-127.0.0.1}:${DASHBOARD_PORT:-3000}:3000"
+    networks:
+      - backend
+      - edge
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
 volumes:
   pgdata:
+
+networks:
+  backend:
+    internal: true
+  edge: {}

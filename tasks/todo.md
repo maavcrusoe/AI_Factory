@@ -77,3 +77,17 @@ Ver tareas en `specs/04` a `specs/08`. Se desglosan al terminar la fase anterior
 - [x] `GET /api/v1/settings` para la UI. Verify: test de valores por defecto.
 - [x] Tipo de `layout.tsx` corregido: `tsc --noEmit` pasa. Verify: tsc y eslint.
 - [x] Sin migración (no hay cambios de esquema). Verify: no hay archivo nuevo en `migrations/`.
+## Fase 7: operación
+- [x] Dockerfile de API (uv, usuario no root, un worker) y de dashboard (standalone). Verify: `docker compose build`.
+- [x] `docker-compose.yml`: db, migrate, api, dashboard; healthchecks; red `backend` interna; secretos obligatorios desde `.env`. Verify: `docker compose up -d` y `ps` healthy.
+- [x] Migraciones en paso controlado (`migrate`, la API espera a `service_completed_successfully`). Verify: exit 0 en el arranque.
+- [x] `scripts/backup.sh` y `scripts/restore.sh`. Verify: backup, DROP, restore; huella íntegra salvo barrido de arranque documentado.
+- [x] Prueba de reinicio (`scripts/restart-test.sh`). Verify: huella idéntica tras reiniciar db, api y dashboard.
+- [x] `/metrics` Prometheus por proyecto, solo admin. Verify: `test_ops.py` y 401/403/200 en vivo.
+- [x] Logs estructurados JSON y middleware de acceso sin query string. Verify: `test_ops.py` y `docker compose logs api`.
+- [x] Rotación de `TOKEN_ENCRYPTION_KEY` (`python -m app.ops rotate-token-key`, MultiFernet). Verify: rotación en vivo; clave antigua sola falla.
+- [x] Runbooks en `docs/runbooks/`: despliegue, backup-restore, rotacion-tokens, items-atascados, ollama-no-disponible, metricas-y-logs. Verify: revisión manual.
+- [x] CI mínima en `.github/workflows/ci.yml` (pytest con Postgres, lint y tsc del dashboard). Verify: checks del PR.
+- [ ] Servidor y SO de despliegue. Pendiente: decisión del owner.
+- [ ] Recuperación automática de items en `MERGING`. Pendiente.
+- [ ] Rol de solo lectura para métricas. Pendiente.

@@ -1,0 +1,10 @@
+# Contexto de build de la API: nada de secretos ni artefactos locales.
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+*.log
