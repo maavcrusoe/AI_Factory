@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import theme from "@/themes/codex";
 
 export const metadata: Metadata = {
   title: "AI Factory",
@@ -9,8 +10,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className="h-full antialiased">
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="es" data-theme={theme.id} className="h-full antialiased">
+      <body className="min-h-full flex flex-col font-sans">
+        <theme.Masthead />
+        {children}
+      </body>
     </html>
   );
 }

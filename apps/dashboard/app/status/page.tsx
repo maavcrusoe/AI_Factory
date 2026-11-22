@@ -33,7 +33,7 @@ export default async function StatusPage() {
   const dbOk = health?.database === "ok";
 
   return (
-    <main className="mx-auto w-full max-w-2xl gap-6 p-4 sm:p-8">
+    <main data-screen="status" className="mx-auto w-full max-w-2xl gap-6 p-4 sm:p-8">
       <h1 className="mb-6 text-2xl font-semibold">Estado del hub</h1>
       <Link href="/inbox" className="mb-4 inline-block text-sm underline">
         Ir a la bandeja

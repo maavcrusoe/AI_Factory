@@ -39,7 +39,7 @@ export default async function ApprovalPage({
   const ready = item.status === "READY_TO_MERGE";
 
   return (
-    <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+    <main data-screen="approval" className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
       <Link href="/approvals" className="text-sm underline">
         ← Aprobaciones
       </Link>
