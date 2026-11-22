@@ -21,7 +21,7 @@
   }
 
   .codex-masthead {
-    display: flex;
+    --codex-masthead-display: flex;
     align-items: center;
     min-height: 64px;
     padding-inline: max(24px, calc((100% - 1320px) / 2));
