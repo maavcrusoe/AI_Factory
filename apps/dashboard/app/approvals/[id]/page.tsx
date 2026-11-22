@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
-import { apiFetch, type WorkArtifact, type WorkItemDetail } from "@/lib/api";
+import { apiFetch, fetchJson, type Me, type WorkArtifact, type WorkItemDetail } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 import { approveAction, mergeAction, requestChangesAction } from "../actions";
 
@@ -34,12 +35,14 @@ export default async function ApprovalPage({
   const artifacts: WorkArtifact[] = artifactsResponse?.ok ? await artifactsResponse.json() : [];
   const diff = artifacts.filter((a) => a.kind === "diff").at(-1)?.content ?? null;
   const { error } = await searchParams;
+  const me = await fetchJson<Me>("/api/v1/auth/me", token);
 
   const waiting = item.status === "WAITING_HUMAN_MERGE";
   const ready = item.status === "READY_TO_MERGE";
 
   return (
-    <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+    <main data-screen="approval" className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+      <SiteNav isAdmin={me?.role === "admin"} />
       <Link href="/approvals" className="text-sm underline">
         ← Aprobaciones
       </Link>

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
-import { apiFetch, type WorkItem } from "@/lib/api";
+import { apiFetch, fetchJson, type Me, type WorkItem } from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 
 export const instant = false;
@@ -13,9 +14,11 @@ export default async function ApprovalsPage() {
   const response = await apiFetch("/api/v1/approvals", token).catch(() => null);
   if (!response || response.status === 401) redirect("/login");
   const items = (await response.json()) as WorkItem[];
+  const me = await fetchJson<Me>("/api/v1/auth/me", token);
 
   return (
-    <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+    <main data-screen="approvals" className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+      <SiteNav isAdmin={me?.role === "admin"} />
       <Link href="/inbox" className="text-sm underline">
         ← Bandeja
       </Link>

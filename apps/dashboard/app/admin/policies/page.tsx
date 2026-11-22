@@ -49,7 +49,7 @@ export default async function AdminPoliciesPage({
   const body = policy?.body;
 
   return (
-    <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
+    <main data-screen="policies" className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
       <h1 className="mb-4 text-2xl font-semibold">Políticas</h1>
       <SiteNav isAdmin />
