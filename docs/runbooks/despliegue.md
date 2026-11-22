@@ -21,8 +21,8 @@ Servidor: Linux genérico con Docker Engine y el plugin Compose v2.24 o posterio
    ```
 3. Rellenar los secretos. Cada valor se genera una vez:
    ```sh
-   python3 -c "import secrets; print(secrets.token_urlsafe(48))"                                  # APP_SECRET_KEY
-   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"     # TOKEN_ENCRYPTION_KEY
+   openssl rand -base64 48 | tr -d '\n'                  # APP_SECRET_KEY
+   openssl rand -base64 32 | tr '+/' '-_'                # TOKEN_ENCRYPTION_KEY (clave Fernet: 32 bytes en base64 URL)
    ```
    Ajustar también `POSTGRES_PASSWORD` (solo letras y números: se inserta sin codificar en la URL),
    `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `OLLAMA_URL` y `LOG_FORMAT=json`.

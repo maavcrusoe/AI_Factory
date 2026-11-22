@@ -82,6 +82,20 @@ def test_json_formatter_emits_one_line_with_request_fields() -> None:
     assert (data["method"], data["path"], data["status"]) == ("GET", "/metrics", 200)
 
 
+def test_unhandled_error_is_logged_as_500(caplog: pytest.LogCaptureFixture) -> None:
+    @app.get("/__fase7_boom")
+    def boom() -> None:
+        raise RuntimeError("fallo de prueba")
+
+    failing = TestClient(app, raise_server_exceptions=False)
+    with caplog.at_level(logging.ERROR, logger="factory.http"):
+        response = failing.get("/__fase7_boom")
+
+    assert response.status_code == 500
+    record = next(r for r in caplog.records if r.name == "factory.http")
+    assert (record.method, record.path, record.status) == ("GET", "/__fase7_boom", 500)
+
+
 def _admin_headers() -> dict[str, str]:
     response = client.post("/api/v1/auth/login", json={"email": "admin@test.local", "password": "test-password"})
     assert response.status_code == 200, response.text

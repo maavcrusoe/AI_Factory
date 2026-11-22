@@ -10,6 +10,9 @@ FILE="${1:?uso: CONFIRM=si scripts/restore.sh <fichero.dump>}"
 [ -f "$FILE" ] || { echo "No existe: $FILE" >&2; exit 1; }
 [ "${CONFIRM:-}" = "si" ] || { echo "Esto borra la base actual. Repite con CONFIRM=si." >&2; exit 1; }
 
+# Antes de tocar nada: el fichero debe ser un dump custom legible. Si no lo es, no se para ni se borra nada.
+docker compose exec -T db pg_restore -l < "$FILE" > /dev/null || { echo "El fichero no es un dump pg_dump -Fc legible: no se ha tocado la base." >&2; exit 1; }
+
 docker compose stop api dashboard
 docker compose exec -T db sh -c 'dropdb --if-exists -U "$POSTGRES_USER" "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 docker compose exec -T db sh -c 'pg_restore --no-owner --exit-on-error -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < "$FILE"

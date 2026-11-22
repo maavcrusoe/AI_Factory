@@ -28,7 +28,7 @@ services:
   db:
     image: postgres:16
     restart: unless-stopped
-    <<: *env-file
+    # Sin env_file: la base solo recibe POSTGRES_*, no los secretos de la API.
     logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}

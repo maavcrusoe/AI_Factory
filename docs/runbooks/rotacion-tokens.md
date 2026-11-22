@@ -67,7 +67,7 @@ Procedimiento probado en un proyecto compose de prueba (rotación con API activa
 
 1. Generar la clave nueva:
    ```sh
-   python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   openssl rand -base64 32 | tr '+/' '-_'
    ```
 2. Poner en `.env` la clave nueva **primero** y la antigua después: `TOKEN_ENCRYPTION_KEY=NUEVA,ANTIGUA`.
    Recrear la API: `docker compose up -d api`.

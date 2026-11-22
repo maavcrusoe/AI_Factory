@@ -52,15 +52,17 @@ app = FastAPI(title="AI Factory API", version="0.1.0", lifespan=lifespan)
 async def access_log(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     """Una línea JSON por petición. Solo ruta, sin query string: no se registran tokens ni datos."""
     started = time.perf_counter()
-    response = await call_next(request)
+    fields = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)
+    except Exception:
+        # Un fallo no capturado sale de call_next sin respuesta: se registra como 500 y se relanza.
+        duration = round((time.perf_counter() - started) * 1000, 1)
+        http_logger.exception("request", extra={**fields, "status": 500, "duration_ms": duration})
+        raise
     http_logger.info(
         "request",
-        extra={
-            "method": request.method,
-            "path": request.url.path,
-            "status": response.status_code,
-            "duration_ms": round((time.perf_counter() - started) * 1000, 1),
-        },
+        extra={**fields, "status": response.status_code, "duration_ms": round((time.perf_counter() - started) * 1000, 1)},
     )
     return response
 
