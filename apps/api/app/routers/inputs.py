@@ -1,7 +1,7 @@
 import json
 import time
 from collections.abc import Iterator
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Query, Response
@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal, get_db
-from app.models import TrackerLink, User, WorkItem, WorkItemEvent
+from app.models import Project, TrackerLink, User, WorkItem, WorkItemEvent
 from app.routers.auth import current_user
 from app.services.ingest import ingest
 from app.services.intake import apply_manual_decision, run_intake
@@ -96,6 +96,25 @@ class WorkItemDetail(WorkItemOut):
     policy_reasons: list[str] | None = None
 
 
+class WorkItemListOut(WorkItemOut):
+    """Fila de la bandeja y del tablero: añade proyecto, dueño y latido para ver quién trabaja en qué."""
+
+    project_slug: str | None = None
+    owner: str | None = None
+    last_heartbeat_at: datetime | None = None
+    heartbeat_state: str | None = None
+
+
+def _list_out(item: WorkItem, project_slug: str) -> WorkItemListOut:
+    return WorkItemListOut(
+        **WorkItemOut.model_validate(item).model_dump(),
+        project_slug=project_slug,
+        owner=item.owner,
+        last_heartbeat_at=item.last_heartbeat_at,
+        heartbeat_state=item.heartbeat_state,
+    )
+
+
 def _detail(db: Session, item: WorkItem) -> WorkItemDetail:
     events = db.scalars(
         select(WorkItemEvent).where(WorkItemEvent.work_item_id == item.id).order_by(WorkItemEvent.id)
@@ -149,19 +168,30 @@ def stream(
     _: Annotated[User, Depends(current_user)],
     after: int | None = Query(default=None, ge=0),
 ) -> StreamingResponse:
-    if after is None:
-        with SessionLocal() as db:
+    with SessionLocal() as db:
+        if after is None:
             after = db.scalar(select(func.coalesce(func.max(WorkItemEvent.id), 0))) or 0
+        # Marca de agua de la BD: `updated_at` usa la hora de la BD, no la del proceso.
+        since = db.scalar(select(func.now()))
     return StreamingResponse(
-        event_frames(after),
+        event_frames(after, since),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
-def event_frames(after_id: int, poll_seconds: float = 1.0) -> Iterator[str]:
-    """Sondea WorkItemEvent y emite un frame SSE por evento nuevo. Ping cada ~15 s sin novedades."""
+# Solape al sondear `updated_at`: un latido que esperó un bloqueo FOR UPDATE se confirma con la hora de inicio de su transacción.
+STREAM_OVERLAP = timedelta(seconds=5)
+
+
+def event_frames(after_id: int, since: datetime, poll_seconds: float = 1.0) -> Iterator[str]:
+    """Emite `change` por evento nuevo (WorkItemEvent) y por item actualizado (latidos, claims sin evento).
+
+    Los latidos no escriben auditoría, así que se detectan por `work_items.updated_at`. Ping cada ~15 s sin novedades.
+    """
     last = after_id
+    watermark = since
+    seen: dict[int, datetime] = {}
     idle = 0
     while True:
         with SessionLocal() as db:
@@ -171,11 +201,27 @@ def event_frames(after_id: int, poll_seconds: float = 1.0) -> Iterator[str]:
                 .order_by(WorkItemEvent.id)
                 .limit(100)
             ).all()
+            touched = db.execute(
+                select(WorkItem.id, WorkItem.updated_at)
+                .where(WorkItem.updated_at >= watermark - STREAM_OVERLAP)
+                .order_by(WorkItem.updated_at)
+                .limit(100)
+            ).all()
         for row in rows:
             last = row.id
             payload = {"eventId": row.id, "workItemId": row.work_item_id, "kind": row.kind}
             yield f"event: change\nid: {row.id}\ndata: {json.dumps(payload)}\n\n"
-        if rows:
+        changed = False
+        for item_id, updated_at in touched:
+            if seen.get(item_id) == updated_at:
+                continue
+            seen[item_id] = updated_at
+            watermark = max(watermark, updated_at)
+            changed = True
+            payload = {"kind": "work_updated", "workItemId": item_id}
+            yield f"event: change\ndata: {json.dumps(payload)}\n\n"
+        seen = {k: v for k, v in seen.items() if v >= watermark - STREAM_OVERLAP}
+        if rows or changed:
             idle = 0
             continue
         idle += 1
@@ -225,16 +271,27 @@ def create_input(
     return create_item(db, background, model, body, idempotency_key, response, actor=user.email)
 
 
-@router.get("", response_model=list[WorkItemOut])
+@router.get("", response_model=list[WorkItemListOut])
 def list_inputs(
     _: Annotated[User, Depends(current_user)],
     db: Session = Depends(get_db),
     status: str | None = Query(default=None, max_length=30),
-) -> list[WorkItem]:
-    query = select(WorkItem).order_by(WorkItem.id.desc()).limit(200)
+    project: str | None = Query(default=None, max_length=100),
+    owner: str | None = Query(default=None, max_length=320),
+    source: str | None = Query(default=None, max_length=20),
+) -> list[WorkItemListOut]:
+    """Lista para el dashboard. Filtros opcionales: estado, proyecto (slug), dueño (email) y origen."""
+    query = select(WorkItem, Project.slug).join(Project, Project.id == WorkItem.project_id)
     if status:
         query = query.where(WorkItem.status == status)
-    return list(db.scalars(query).all())
+    if project:
+        query = query.where(Project.slug == project)
+    if owner:
+        query = query.where(WorkItem.owner == owner)
+    if source:
+        query = query.where(WorkItem.source == source)
+    rows = db.execute(query.order_by(WorkItem.id.desc()).limit(200)).all()
+    return [_list_out(item, slug) for item, slug in rows]
 
 
 @router.get("/{item_id}", response_model=WorkItemDetail)

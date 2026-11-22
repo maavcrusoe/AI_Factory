@@ -226,9 +226,15 @@ def test_event_frames_stream_each_audit_event() -> None:
     use_model(FakeModel(assessment()))
     with SessionLocal() as db:
         after = db.scalar(select(func.coalesce(func.max(WorkItemEvent.id), 0))) or 0
+        since = db.scalar(select(func.now()))
     post_input()
-    frames = event_frames(after, poll_seconds=0)
-    kinds = [json.loads(next(frames).split("data: ", 1)[1])["kind"] for _ in range(4)]
+    frames = event_frames(after, since, poll_seconds=0)
+    kinds: list[str] = []
+    while len(kinds) < 4:
+        payload = json.loads(next(frames).split("data: ", 1)[1])
+        # Los frames work_updated (cambios de item sin evento) no cuentan aquí.
+        if "eventId" in payload:
+            kinds.append(payload["kind"])
     assert kinds == ["received", "normalized", "triage_started", "intake_assessed"]
 
 

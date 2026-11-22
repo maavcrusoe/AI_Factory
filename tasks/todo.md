@@ -66,3 +66,14 @@ Ver tareas en `specs/04` a `specs/08`. Se desglosan al terminar la fase anterior
 - [x] Cliente: gate final sobre el HEAD del PR y `MEANING`/`PLANNED` en el code-reviewer. Verify: unittest del pipeline (29 pasan).
 - [ ] Merge real en meme-demo. No se hace: la brief lo prohíbe.
 - [ ] Confirmar contra docs de GitHub que la API de merge rechaza borradores (la consulta de docs falló en esta sesión).
+## Fase 6: dashboard completo en tiempo real
+- [x] Resumen de proyectos (`GET /api/v1/projects`) y pantalla `/projects`. Verify: `test_dashboard_api.py` + Playwright.
+- [x] Tablero Kanban por estado `/board` con filtros proyecto, dueño, origen y estado. Verify: test de filtros + Playwright.
+- [x] Latidos en tiempo real: SSE emite `work_updated` por `updated_at`; latido caducado resaltado en cliente. Verify: test SSE + Playwright (latido hace 21 min).
+- [x] Detalle con línea de tiempo, visor de logs y diff coloreado. Verify: Playwright.
+- [x] Admin de usuarios y roles (`PATCH /api/v1/users/{id}`, sin auto-bloqueo). Verify: tests 200/403/404/422.
+- [x] Admin de políticas sobre la API de Fase 5 (guardar = versión nueva). Verify: Playwright (v1 y restaurada a v2).
+- [x] Retención de logs `LOG_RETENTION_DAYS` (30 por defecto) y job de limpieza. Verify: `test_retention_deletes_only_old_logs`.
+- [x] `GET /api/v1/settings` para la UI. Verify: test de valores por defecto.
+- [x] Tipo de `layout.tsx` corregido: `tsc --noEmit` pasa. Verify: tsc y eslint.
+- [x] Sin migración (no hay cambios de esquema). Verify: no hay archivo nuevo en `migrations/`.

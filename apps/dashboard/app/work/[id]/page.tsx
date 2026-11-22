@@ -1,9 +1,19 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { ArtifactView } from "@/components/artifact-view";
+import { HeartbeatAge } from "@/components/heartbeat-age";
 import { LiveRefresh } from "@/components/live-refresh";
+import { SiteNav } from "@/components/site-nav";
 import { StatusBadge } from "@/components/status-badge";
-import { apiFetch, DECIDABLE, type WorkArtifact, type WorkItemDetail } from "@/lib/api";
+import {
+  apiFetch,
+  DECIDABLE,
+  fetchJson,
+  type Me,
+  type PlatformSettings,
+  type WorkArtifact,
+  type WorkItemDetail,
+} from "@/lib/api";
 import { SESSION_COOKIE } from "@/lib/config";
 import { decideAction } from "./actions";
 
@@ -27,14 +37,16 @@ export default async function WorkPage({
   const artifactsResponse = await apiFetch(`/api/v1/work/${id}/artifacts`, token).catch(() => null);
   const artifacts: WorkArtifact[] = artifactsResponse?.ok ? await artifactsResponse.json() : [];
   const stages = item.events.filter((e) => ["stage", "pr_opened", "tracker_linked"].includes(e.kind));
+  const me = await fetchJson<Me>("/api/v1/auth/me", token);
+  const settings = await fetchJson<PlatformSettings>("/api/v1/settings", token);
+  const timeoutSeconds = settings?.heartbeat_timeout_seconds ?? 30 * 60;
   const { error } = await searchParams;
 
   return (
     <main className="mx-auto w-full max-w-3xl gap-6 p-4 sm:p-8">
       <LiveRefresh />
-      <Link href="/inbox" className="text-sm underline">
-        ← Bandeja
-      </Link>
+      <SiteNav isAdmin={me?.role === "admin"} />
+
       <header className="mt-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">
           #{item.id} {item.title}
@@ -53,6 +65,9 @@ export default async function WorkPage({
             <Field label="Último latido" value={formatDate(item.last_heartbeat_at)} />
             <Field label="Estado" value={item.heartbeat_state ?? "—"} />
           </dl>
+          <p className="text-sm">
+            <HeartbeatAge lastHeartbeatAt={item.last_heartbeat_at} timeoutSeconds={timeoutSeconds} />
+          </p>
           {item.heartbeat_message ? <p className="text-sm">{item.heartbeat_message}</p> : null}
         </section>
       ) : null}
@@ -90,7 +105,7 @@ export default async function WorkPage({
         ) : null}
       </section>
 
-      <section className="mb-6 grid gap-4">
+      <section className="mb-6 grid gap-2" aria-label="Texto original">
         <h2 className="font-medium">Texto original</h2>
         <pre className="whitespace-pre-wrap rounded border p-3 text-sm">{item.body}</pre>
         {item.expanded_body ? (
@@ -146,27 +161,25 @@ export default async function WorkPage({
         <h2 className="font-medium">Logs y diffs</h2>
         {artifacts.length === 0 ? <p className="text-sm text-neutral-500">Sin artefactos todavía.</p> : null}
         {artifacts.map((artifact) => (
-          <details key={artifact.id} data-testid="artifact" className="rounded border p-2">
-            <summary className="cursor-pointer text-sm">
-              {artifact.kind} · {artifact.stage} · ronda {artifact.round}
-            </summary>
-            <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap rounded bg-neutral-50 p-2 text-xs">
-              {artifact.content}
-            </pre>
-          </details>
+          <ArtifactView key={artifact.id} artifact={artifact} />
         ))}
       </section>
 
-      <section className="grid gap-2">
-        <h2 className="font-medium">Auditoría</h2>
-        <ol data-testid="events" className="grid gap-1 text-sm">
+      <section className="grid gap-2" aria-label="Línea de tiempo">
+        <h2 className="font-medium">Línea de tiempo</h2>
+        <ol data-testid="events" className="grid gap-3 border-l-2 pl-4 text-sm">
           {item.events.map((event) => (
-            <li key={event.id} className="flex flex-wrap gap-2 border-b py-1">
-              <span className="font-mono text-xs">{event.kind}</span>
-              <span className="text-neutral-600">
-                {event.from_status ?? "∅"} → {event.to_status ?? "—"}
+            <li key={event.id} className="relative grid gap-0.5">
+              <span className="absolute -left-[1.35rem] top-1.5 size-2 rounded-full bg-neutral-700" aria-hidden />
+              <span className="flex flex-wrap items-baseline gap-2">
+                <span className="font-mono text-xs">{event.kind}</span>
+                <span className="text-neutral-600">
+                  {event.from_status ?? "∅"} → {event.to_status ?? "—"}
+                </span>
               </span>
-              <span className="text-neutral-500">por {event.actor}</span>
+              <span className="text-xs text-neutral-500">
+                por {event.actor} · {formatDate(event.created_at)}
+              </span>
             </li>
           ))}
         </ol>
