@@ -28,3 +28,6 @@ Una línea por hecho, con fecha. Detalles en `memory/<tema>.md`.
 - 2026-11-22: Fase 7 en rama factory/fase-7: compose (db, migrate, api, dashboard; red backend interna), /metrics admin, logs JSON, backup/restore probados, rotación de TOKEN_ENCRYPTION_KEY con MultiFernet, runbooks en docs/runbooks/, CI mínima. Ver specs/decisiones/013.
 - 2026-11-22: E2E local con meme-demo hecho; PR #6 mergeado desde el dashboard (decisión 014). En Windows usar 127.0.0.1, no localhost, para Postgres.
 - 2026-11-22: Rol `viewer` (solo lectura: /metrics + lecturas; 403 en crear entradas, decidir, aprobar, claim, admin) y etiqueta de fábrica retirada del remoto al pasar a REJECTED (hub gana, revierte re-añadidos). Sin migración. Ver specs/decisiones/015.
+- 2026-11-21: Ollama qwen3.5:4b accesible; requiere think:false (sin él >2min). Fase 0 mergeada (PR #1). Fase 1 en curso (item 2).
+- 2026-11-21: Azure DevOps real pospuesto (sin org de pruebas); solo mocks en Fase 2.
+- 2026-11-22: Fases 0-7 mergeadas a main (PRs #1-#8). Pendientes: Azure DevOps real, servidor de despliegue, merge real en meme-demo (PR draft #6 abierto), CI ya existe.
